@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { getUserAgent } from '../utils/userAgent';
 
 const API_BASE_URL = 'https://ggcg.szk.kr';
 
@@ -8,6 +9,7 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/x-www-form-urlencoded',
+    'User-Agent': getUserAgent(),
   },
 });
 
@@ -128,6 +130,57 @@ export const authAPI = {
   // 유저 정보 조회
   getUserInfo: async (uid: string) => {
     const response = await api.get(`/user?uid=${uid}`);
+    return response.data;
+  },
+
+  // 회원탈퇴
+  deleteAccount: async (email: string, password: string) => {
+    const formData = createFormData({ email, password });
+    const response = await api.delete('/user', {
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // 세션 목록 조회
+  getSessionList: async (sid: string) => {
+    const response = await api.get(`/session/list?sid=${sid}`);
+    return response.data;
+  },
+};
+
+// 음식 관련 타입 정의
+export interface FoodItem {
+  barcode: string;
+  count: number;
+  created_at: string;
+  description: string;
+  expiration_date: string;
+  expiration_date_desc: string;
+  fid: string;
+  image_url: string;
+  name: string;
+  type: string;
+  uid: string;
+  volume: string;
+}
+
+export interface FoodListResponse {
+  code: number;
+  data: {
+    food_list: FoodItem[];
+  };
+  message: string;
+}
+
+// 음식 관련 API 함수들
+export const foodAPI = {
+  // 음식 목록 조회
+  getFoodList: async (sid: string): Promise<FoodListResponse> => {
+    const response = await api.get(`/food/list?sid=${sid}`);
     return response.data;
   },
 };

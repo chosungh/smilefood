@@ -4,14 +4,14 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { authAPI } from '../services/api';
 
 export default function RegisterScreen() {
@@ -22,10 +22,15 @@ export default function RegisterScreen() {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
+  const [verificationError, setVerificationError] = useState('');
   const [timer, setTimer] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [isResendTimerActive, setIsResendTimerActive] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const resendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -35,6 +40,8 @@ export default function RegisterScreen() {
       }, 1000);
     } else if (timer === 0 && isTimerActive) {
       setIsTimerActive(false);
+      setShowVerificationInput(false);
+      setVerificationCode('');
     }
 
     return () => {
@@ -44,9 +51,36 @@ export default function RegisterScreen() {
     };
   }, [timer, isTimerActive]);
 
+  useEffect(() => {
+    if (isResendTimerActive && resendTimer > 0) {
+      resendTimerRef.current = setTimeout(() => {
+        setResendTimer(resendTimer - 1);
+      }, 1000);
+    } else if (resendTimer === 0 && isResendTimerActive) {
+      setIsResendTimerActive(false);
+    }
+
+    return () => {
+      if (resendTimerRef.current) {
+        clearTimeout(resendTimerRef.current);
+      }
+    };
+  }, [resendTimer, isResendTimerActive]);
+
   const startTimer = () => {
-    setTimer(60);
+    setTimer(180); // 3분 = 180초
     setIsTimerActive(true);
+  };
+
+  const startResendTimer = () => {
+    setResendTimer(60); // 1분 = 60초
+    setIsResendTimerActive(true);
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   const handleSendVerificationCode = async () => {
@@ -57,6 +91,7 @@ export default function RegisterScreen() {
 
     setIsLoading(true);
     setError('');
+    setVerificationError('');
     
     try {
       const response = await authAPI.sendEmailVerificationCode(email);
@@ -64,6 +99,7 @@ export default function RegisterScreen() {
       if (response.code === 200) {
         setShowVerificationInput(true);
         startTimer();
+        startResendTimer();
         Alert.alert('성공', response.message);
       } else {
         setError(response.message || '인증 코드 전송에 실패했습니다.');
@@ -77,26 +113,28 @@ export default function RegisterScreen() {
 
   const handleVerifyCode = async () => {
     if (!verificationCode) {
-      setError('인증 코드를 입력해주세요.');
+      setVerificationError('인증 코드를 입력해주세요.');
       return;
     }
 
-    setIsLoading(true);
-    setError('');
+    setIsVerifying(true);
     
     try {
       const response = await authAPI.verifyEmailCode(email, verificationCode);
       
       if (response.code === 200) {
         setIsEmailVerified(true);
+        setIsTimerActive(false);
+        setIsResendTimerActive(false);
+        setShowVerificationInput(false);
         Alert.alert('성공', response.message);
       } else {
-        setError(response.message || '인증 코드가 일치하지 않습니다.');
+        setVerificationError(response.message || '인증 코드가 일치하지 않습니다.');
       }
     } catch (error: any) {
-      setError( error.response.data.message || '인증 코드 확인 중 오류가 발생했습니다.');
+      setVerificationError(error.response.data.message || '인증 코드 확인 중 오류가 발생했습니다.');
     } finally {
-      setIsLoading(false);
+      setIsVerifying(false);
     }
   };
 
@@ -128,15 +166,14 @@ export default function RegisterScreen() {
         setError(response.message || '회원가입에 실패했습니다.');
       }
     } catch (error: any) {
-      console.error('Register error:', error);
-      setError('회원가입 중 오류가 발생했습니다.');
+      setError(error.response.data.message || '회원가입 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper style={styles.container} backgroundColor="#fff">
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -164,16 +201,16 @@ export default function RegisterScreen() {
                 <TouchableOpacity
                   style={[
                     styles.verifyButton, 
-                    (isEmailVerified || isTimerActive || isLoading) && styles.disabledButton
+                    (isEmailVerified || isLoading || isResendTimerActive) && styles.disabledButton
                   ]}
                   onPress={handleSendVerificationCode}
-                  disabled={isEmailVerified || isTimerActive || isLoading}
+                  disabled={isEmailVerified || isLoading || isResendTimerActive}
                 >
                   <Text style={styles.verifyButtonText}>
                     {isEmailVerified 
                       ? '인증완료' 
-                      : isTimerActive 
-                        ? `재발송(${timer}s)` 
+                      : isResendTimerActive 
+                        ? `재발송(${formatTime(resendTimer)})` 
                         : '인증'
                     }
                   </Text>
@@ -181,27 +218,37 @@ export default function RegisterScreen() {
               </View>
             </View>
             
-            {showVerificationInput && !isEmailVerified && (
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>인증 코드</Text>
-                <View style={styles.verificationContainer}>
-                  <TextInput
-                    style={[styles.input, styles.verificationInput]}
-                    placeholder="6자리 인증 코드를 입력하세요"
-                    value={verificationCode}
-                    onChangeText={setVerificationCode}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                  />
-                  <TouchableOpacity
-                    style={styles.verifyCodeButton}
-                    onPress={handleVerifyCode}
-                    disabled={isLoading}
-                  >
-                    <Text style={styles.verifyCodeButtonText}>확인</Text>
-                  </TouchableOpacity>
+            {showVerificationInput && !isEmailVerified && isTimerActive && (
+              <>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>인증 코드</Text>
+                  <View style={styles.verificationContainer}>
+                    <TextInput
+                      style={[styles.input, styles.verificationInput]}
+                      placeholder="6자리 인증 코드를 입력하세요"
+                      value={verificationCode}
+                      onChangeText={setVerificationCode}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                    />
+                    <TouchableOpacity
+                      style={styles.verifyCodeButton}
+                      onPress={handleVerifyCode}
+                      disabled={isVerifying}
+                    >
+                      <Text style={styles.verifyCodeButtonText}>
+                        {isVerifying ? '확인 중...' : '확인'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.expirationText}>
+                    {verificationError 
+                      ? `${verificationError} (${formatTime(timer)})` 
+                      : `시간 내 인증코드를 입력해주세요. ${formatTime(timer)}`
+                    }
+                  </Text>
                 </View>
-              </View>
+              </>
             )}
 
             <View style={styles.inputContainer}>
@@ -251,7 +298,7 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 
@@ -375,5 +422,11 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#007AFF',
     fontSize: 16,
+  },
+  expirationText: {
+    color: '#ff3b30',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

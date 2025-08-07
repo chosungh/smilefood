@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -31,9 +31,15 @@ export default function RootLayout() {
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
           <Stack.Screen name="main" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="delete-account" />
           <Stack.Screen name="+not-found" />
         </Stack>
-        <StatusBar style="auto" />
+        <StatusBar 
+          style="dark" 
+          backgroundColor={Platform.OS === 'android' ? '#fff' : 'transparent'}
+          translucent={Platform.OS === 'android'}
+        />
       </ThemeProvider>
     </AppProvider>
   );

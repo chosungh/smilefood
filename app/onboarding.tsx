@@ -1,15 +1,15 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-} from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import {
+    Dimensions,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 
 const { width, height } = Dimensions.get('window');
 
@@ -58,7 +58,7 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper style={styles.container} backgroundColor="#fff">
       <ScrollView
         ref={scrollViewRef}
         horizontal
@@ -105,7 +105,7 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         )}
       </View>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 

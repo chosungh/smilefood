@@ -1,22 +1,35 @@
-import { authAPI } from '@/services/api';
+import { authAPI, foodAPI, FoodItem } from '@/services/api';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
-  SafeAreaView,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { FloatingActionButton } from '../components/FloatingActionButton';
+import { FoodItemComponent } from '../components/FoodItem';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 
 export default function MainScreen() {
   const router = useRouter();
   const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo } = useAppContext();
+  const [foodList, setFoodList] = useState<FoodItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
+    if (!sessionId) {
+      router.replace('/login');
+      return;
+    }
+
     const fetchUserInfo = async () => {
       try {
         if (sessionId) {
@@ -41,17 +54,72 @@ export default function MainScreen() {
       }
     };
 
-    fetchUserInfo();
+      const fetchFoodList = async () => {
+    if (!sessionId) return;
+    
+    try {
+      setLoading(true);
+      const response = await foodAPI.getFoodList(sessionId);
+      if (response.code === 200) {
+        setFoodList(response.data.food_list);
+      }
+    } catch (error: any) {
+      console.error('Food list fetch error:', error?.response);
+      Alert.alert('오류', '음식 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // 5초마다 갱신
-    const interval = setInterval(fetchUserInfo, 5000);
+  const fetchFoodListSilent = async () => {
+    if (!sessionId) return;
+    
+    try {
+      const response = await foodAPI.getFoodList(sessionId);
+      if (response.code === 200) {
+        setFoodList(response.data.food_list);
+      }
+    } catch (error: any) {
+      console.error('Food list silent fetch error:', error?.response);
+      // 조용히 에러 처리 (알림 없음)
+    }
+  };
+
+    fetchUserInfo();
+    fetchFoodList();
+
+    // 5초마다 세션, 유저 정보, 음식 정보 갱신
+    const interval = setInterval(() => {
+      fetchUserInfo();
+      fetchFoodListSilent(); // 로딩 없이 조용히 업데이트
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [sessionId]);
 
+  const onRefresh = async () => {
+    if (!sessionId) return;
+    
+    setRefreshing(true);
+    try {
+      const response = await foodAPI.getFoodList(sessionId);
+      if (response.code === 200) {
+        setFoodList(response.data.food_list);
+      }
+    } catch (error: any) {
+      console.error('Food list refresh error:', error?.response);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleFoodItemPress = (food: FoodItem) => {
+    // 음식 아이템 상세 정보 표시 (나중에 구현)
+    Alert.alert(food.name, `${food.description}\n\n유통기한: ${food.expiration_date_desc}`);
+  };
+
   const handleCamera = () => {
-    // 카메라 기능 구현 예정
-    Alert.alert('카메라', '카메라 기능이 곧 구현됩니다.');
+    router.push('/camera');
   };
 
   const handleSettings = () => {
@@ -59,7 +127,7 @@ export default function MainScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper style={styles.container} backgroundColor="#f8f9fa">
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>SmileFood</Text>
@@ -91,39 +159,50 @@ export default function MainScreen() {
         </View>
       </View>
 
-      {/* Main Content */}
+      {/* Food List */}
       <View style={styles.content}>
-        <Text style={styles.welcomeText}>
-          안녕하세요, {userInfo?.name || '사용자'}님!{'\n'}
-          오늘도 건강한 식습관을 유지해보세요.
-        </Text>
-        
-        <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleCamera}>
-            <Text style={styles.actionButtonIcon}>📸</Text>
-            <Text style={styles.actionButtonText}>음식 촬영</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonIcon}>📊</Text>
-            <Text style={styles.actionButtonText}>영양 분석</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonIcon}>📝</Text>
-            <Text style={styles.actionButtonText}>식단 기록</Text>
-          </TouchableOpacity>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>내 음식 목록</Text>
+          <Text style={styles.foodCount}>{foodList.length}개</Text>
         </View>
+        
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>음식 목록을 불러오는 중...</Text>
+          </View>
+        ) : (
+          <ScrollView 
+            style={styles.foodList}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            showsVerticalScrollIndicator={false}
+          >
+            {foodList.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyIcon}>🍽️</Text>
+                <Text style={styles.emptyTitle}>음식이 없습니다</Text>
+                <Text style={styles.emptyDescription}>
+                  카메라로 음식을 추가해보세요!
+                </Text>
+              </View>
+            ) : (
+              foodList.map((food) => (
+                <FoodItemComponent
+                  key={food.fid}
+                  food={food}
+                  onPress={() => handleFoodItemPress(food)}
+                />
+              ))
+            )}
+          </ScrollView>
+        )}
       </View>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.cameraButton} onPress={handleCamera}>
-          <Text style={styles.cameraButtonIcon}>📷</Text>
-          <Text style={styles.cameraButtonText}>카메라로 이동</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      {/* Floating Action Button */}
+      <FloatingActionButton onCameraPress={handleCamera} />
+    </SafeAreaWrapper>
   );
 }
 
@@ -269,28 +348,55 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  footer: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-  },
-  cameraButton: {
-    backgroundColor: '#007AFF',
+  sectionHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
+    marginBottom: 15,
   },
-  cameraButtonIcon: {
+  sectionTitle: {
     fontSize: 20,
-    marginRight: 8,
+    fontWeight: 'bold',
+    color: '#333',
   },
-  cameraButtonText: {
-    color: '#fff',
+  foodCount: {
     fontSize: 16,
-    fontWeight: '600',
+    color: '#666',
   },
+  foodList: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  emptyIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  emptyDescription: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+
 });
