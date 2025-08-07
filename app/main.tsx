@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import {
   Alert,
+  Image,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -18,19 +19,35 @@ export default function MainScreen() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        if (sessionId && !userInfo) {
+        if (sessionId) {
           const sessionResponse = await authAPI.getSessionInfo(sessionId);
+          
+          // 세션 만료 확인
+          if (sessionResponse.data.session_info.is_active === 0) {
+            Alert.alert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
+            setSessionId(null);
+            setUserInfo(null);
+            setIsLoggedIn(false);
+            router.replace('/login');
+            return;
+          }
+          
           const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
           const userInfoData = userResponse.data.user_info;
-          console.log(userInfoData);
           setUserInfo(userInfoData);
         }
       } catch (error: any) {
         console.error('User info fetch error:', error?.response);
       }
     };
+
     fetchUserInfo();
-  }, [sessionId, userInfo, setUserInfo]);
+
+    // 5초마다 갱신
+    const interval = setInterval(fetchUserInfo, 5000);
+
+    return () => clearInterval(interval);
+  }, [sessionId]);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -84,9 +101,17 @@ export default function MainScreen() {
       <View style={styles.profileCard}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {userInfo?.name?.charAt(0) || 'A'}
-            </Text>
+            {userInfo?.profile_url ? (
+              <Image 
+                source={{ uri: userInfo.profile_url }} 
+                style={styles.avatarImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={styles.avatarText}>
+                {userInfo?.name?.charAt(0) || 'A'}
+              </Text>
+            )}
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.userName}>{userInfo?.name || 'username'}</Text>
@@ -188,6 +213,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
   },
   avatarText: {
     color: '#fff',

@@ -41,7 +41,6 @@ export default function LoginScreen() {
           const sessionResponse = await authAPI.getSessionInfo(response.data.sid);
           const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
           setUserInfo(userResponse.data.user_info);
-          console.log(userResponse.data.user_info);
         } catch (error: any) {
           console.error('사용자 정보 가져오기 오류:', error);
         }

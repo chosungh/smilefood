@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -23,7 +23,31 @@ export default function RegisterScreen() {
   const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [timer, setTimer] = useState(0);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (isTimerActive && timer > 0) {
+      timerRef.current = setTimeout(() => {
+        setTimer(timer - 1);
+      }, 1000);
+    } else if (timer === 0 && isTimerActive) {
+      setIsTimerActive(false);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [timer, isTimerActive]);
+
+  const startTimer = () => {
+    setTimer(60);
+    setIsTimerActive(true);
+  };
 
   const handleSendVerificationCode = async () => {
     if (!email) {
@@ -39,6 +63,7 @@ export default function RegisterScreen() {
       
       if (response.code === 200) {
         setShowVerificationInput(true);
+        startTimer();
         Alert.alert('성공', response.message);
       } else {
         setError(response.message || '인증 코드 전송에 실패했습니다.');
@@ -93,7 +118,7 @@ export default function RegisterScreen() {
       const response = await authAPI.register(email, password, name);
       
       if (response.code === 200) {
-        Alert.alert('성공', response.message, [
+        Alert.alert('회원가입 완료', response.message, [
           {
             text: '확인',
             onPress: () => router.replace('/login'),
@@ -137,17 +162,25 @@ export default function RegisterScreen() {
                   editable={!isEmailVerified}
                 />
                 <TouchableOpacity
-                  style={[styles.verifyButton, isEmailVerified && styles.verifiedButton]}
+                  style={[
+                    styles.verifyButton, 
+                    (isEmailVerified || isTimerActive || isLoading) && styles.disabledButton
+                  ]}
                   onPress={handleSendVerificationCode}
-                  disabled={isLoading || isEmailVerified}
+                  disabled={isEmailVerified || isTimerActive || isLoading}
                 >
                   <Text style={styles.verifyButtonText}>
-                    {isEmailVerified ? '인증완료' : '인증'}
+                    {isEmailVerified 
+                      ? '인증완료' 
+                      : isTimerActive 
+                        ? `재발송(${timer}s)` 
+                        : '인증'
+                    }
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
-
+            
             {showVerificationInput && !isEmailVerified && (
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>인증 코드</Text>
@@ -286,6 +319,9 @@ const styles = StyleSheet.create({
   },
   verifiedButton: {
     backgroundColor: '#34C759',
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
   },
   verifyButtonText: {
     color: '#fff',
