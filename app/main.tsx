@@ -49,42 +49,13 @@ export default function MainScreen() {
     return () => clearInterval(interval);
   }, [sessionId]);
 
-  const handleLogout = async () => {
-    Alert.alert(
-      '로그아웃',
-      '정말 로그아웃하시겠습니까?',
-      [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
-        {
-          text: '로그아웃',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              if (sessionId) {
-                const response = await authAPI.logout(sessionId);
-                Alert.alert('로그아웃 성공', response.message);
-              }
-              
-              setSessionId(null);
-              setUserInfo(null);
-              setIsLoggedIn(false);
-              router.replace('/login');
-            } catch (error: any) {
-              console.error('Logout error:', error);
-              Alert.alert('오류', error.response?.data?.message || '로그아웃 중 오류가 발생했습니다.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
   const handleCamera = () => {
     // 카메라 기능 구현 예정
     Alert.alert('카메라', '카메라 기능이 곧 구현됩니다.');
+  };
+
+  const handleSettings = () => {
+    router.push('/settings');
   };
 
   return (
@@ -92,7 +63,7 @@ export default function MainScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>SmileFood</Text>
-        <TouchableOpacity style={styles.settingsButton} onPress={handleLogout}>
+        <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
           <Text style={styles.settingsButtonText}>설정</Text>
         </TouchableOpacity>
       </View>
