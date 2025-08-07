@@ -44,8 +44,7 @@ export default function RegisterScreen() {
         setError(response.message || '인증 코드 전송에 실패했습니다.');
       }
     } catch (error: any) {
-      console.error('Send verification code error:', error);
-      setError('인증 코드 전송 중 오류가 발생했습니다.');
+      setError(error.response.data.message || '인증 코드 전송 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -70,8 +69,7 @@ export default function RegisterScreen() {
         setError(response.message || '인증 코드가 일치하지 않습니다.');
       }
     } catch (error: any) {
-      console.error('Verify code error:', error);
-      setError('인증 코드 확인 중 오류가 발생했습니다.');
+      setError( error.response.data.message || '인증 코드 확인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }

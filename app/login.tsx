@@ -20,7 +20,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId } = useAppContext();
+  const { setIsLoggedIn, setSessionId, setUserInfo } = useAppContext();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -35,12 +35,23 @@ export default function LoginScreen() {
       if (response.code === 200) {
         setSessionId(response.data.sid);
         setIsLoggedIn(true);
+        
+        // 로그인 성공 후 사용자 정보 가져오기
+        try {
+          const sessionResponse = await authAPI.getSessionInfo(response.data.sid);
+          const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
+          setUserInfo(userResponse.data.user_info);
+          console.log(userResponse.data.user_info);
+        } catch (error: any) {
+          console.error('사용자 정보 가져오기 오류:', error);
+        }
+        
         router.replace('/main');
       } else {
         Alert.alert('로그인 실패', response.message || '로그인에 실패했습니다.');
       }
     } catch (error: any) {
-      Alert.alert('오류', error.response.data.message || '로그인 중 오류가 발생했습니다.');
+      Alert.alert('오류', error.response?.data?.message || '로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +67,7 @@ export default function LoginScreen() {
       const response = await authAPI.findPassword(email);
       Alert.alert('알림', response.message || '비밀번호 재설정 링크가 이메일로 전송되었습니다.');
     } catch (error: any) {
-      Alert.alert('오류', error.response.data.message || '비밀번호 찾기 중 오류가 발생했습니다.');
+      Alert.alert('오류', error.response?.data?.message || '비밀번호 찾기 중 오류가 발생했습니다.');
     }
   };
 

@@ -1,5 +1,5 @@
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const API_BASE_URL = 'https://ggcg.szk.kr';
 
@@ -111,11 +111,23 @@ export const authAPI = {
   // 비밀번호 찾기
   findPassword: async (email: string) => {
     const formData = createFormData({ email });
-    const response = await api.post(`/user/find_password`, formData, {
+    const response = await api.post('/user/find_password', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
+  },
+
+  // 세션 정보 조회
+  getSessionInfo: async (sid: string) => {
+    const response = await api.get(`/session?sid=${sid}`);
+    return response.data;
+  },
+
+  // 유저 정보 조회
+  getUserInfo: async (uid: string) => {
+    const response = await api.get(`/user?uid=${uid}`);
     return response.data;
   },
 };

@@ -1,6 +1,6 @@
 import { authAPI } from '@/services/api';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   Alert,
   SafeAreaView,
@@ -13,13 +13,24 @@ import { useAppContext } from '../contexts/AppContext';
 
 export default function MainScreen() {
   const router = useRouter();
-  const [userName, setUserName] = useState('사용자');
-  const { setIsLoggedIn, setSessionId } = useAppContext();
+  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo } = useAppContext();
 
   useEffect(() => {
-    // 여기서 사용자 정보를 가져올 수 있습니다
-    // 현재는 기본값을 사용합니다
-  }, []);
+    const fetchUserInfo = async () => {
+      try {
+        if (sessionId && !userInfo) {
+          const sessionResponse = await authAPI.getSessionInfo(sessionId);
+          const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
+          const userInfoData = userResponse.data.user_info;
+          console.log(userInfoData);
+          setUserInfo(userInfoData);
+        }
+      } catch (error: any) {
+        console.error('User info fetch error:', error?.response);
+      }
+    };
+    fetchUserInfo();
+  }, [sessionId, userInfo, setUserInfo]);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -35,12 +46,18 @@ export default function MainScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await authAPI.logout(sessionId);
+              if (sessionId) {
+                const response = await authAPI.logout(sessionId);
+                Alert.alert('로그아웃 성공', response.message);
+              }
+              
               setSessionId(null);
+              setUserInfo(null);
               setIsLoggedIn(false);
               router.replace('/login');
             } catch (error: any) {
-              Alert.alert('오류', error.response.data.message);
+              console.error('Logout error:', error);
+              Alert.alert('오류', error.response?.data?.message || '로그아웃 중 오류가 발생했습니다.');
             }
           },
         },
@@ -67,25 +84,13 @@ export default function MainScreen() {
       <View style={styles.profileCard}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{userName.charAt(0)}</Text>
+            <Text style={styles.avatarText}>
+              {userInfo?.name?.charAt(0) || 'A'}
+            </Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{userName}</Text>
-            <Text style={styles.userEmail}>사용자@example.com</Text>
-          </View>
-        </View>
-        <View style={styles.profileStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>분석된 음식</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>저장된 식단</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>주간 기록</Text>
+            <Text style={styles.userName}>{userInfo?.name || 'username'}</Text>
+            <Text style={styles.userEmail}>{userInfo?.email || 'user@example.com'}</Text>
           </View>
         </View>
       </View>
@@ -93,7 +98,7 @@ export default function MainScreen() {
       {/* Main Content */}
       <View style={styles.content}>
         <Text style={styles.welcomeText}>
-          안녕하세요, {userName}님!{'\n'}
+          안녕하세요, {userInfo?.name || '사용자'}님!{'\n'}
           오늘도 건강한 식습관을 유지해보세요.
         </Text>
         
@@ -174,7 +179,6 @@ const styles = StyleSheet.create({
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
   },
   avatar: {
     width: 60,

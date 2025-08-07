@@ -16,17 +16,17 @@ const { width, height } = Dimensions.get('window');
 const onboardingData = [
   {
     title: '스마일푸드에 오신 것을 환영합니다',
-    description: '음식을 촬영하고 분석하여 건강한 식습관을 만들어보세요',
+    description: '제품을 촬영하고 관리해보세요.',
     image: require('../assets/images/icon.png'),
   },
   {
-    title: '간편한 음식 분석',
-    description: '카메라로 음식을 촬영하면 자동으로 영양 정보를 분석해드립니다',
+    title: '간편한 음식 관리',
+    description: '바코드를 찍으면 유통기한을 관리해드립니다.',
     image: require('../assets/images/react-logo.png'),
   },
   {
     title: '건강한 식습관 관리',
-    description: '매일의 식단을 기록하고 건강한 생활을 시작해보세요',
+    description: '레시피 추천도 받아보세요.',
     image: require('../assets/images/splash-icon.png'),
   },
 ];
