@@ -1,21 +1,22 @@
-import { View, SafeAreaView, Alert, StyleSheet, Dimensions } from 'react-native'
-import { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Header from './Header'
-import FoodViewList from './FoodViewList';
-import MenuButtonAndModal from './MenuButton';
+import { useEffect } from 'react';
+import { useRouter } from 'expo-router';
+import { useAppContext } from '../contexts/AppContext';
 
-export default function Index(): JSX.Element {
-  return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{flex: 1, gap: Dimensions.get('window').width/10}}>
-        <Header />
-        <FoodViewList />
-      </View>
+export default function Index() {
+  const router = useRouter();
+  const { isFirstLaunch, isLoggedIn } = useAppContext();
 
-      <MenuButtonAndModal />
+  useEffect(() => {
+    // 상태에 따라 적절한 화면으로 리다이렉트
+    if (isFirstLaunch) {
+      router.replace('/onboarding');
+    } else if (isLoggedIn) {
+      router.replace('/main');
+    } else {
+      router.replace('/login');
+    }
+  }, [isFirstLaunch, isLoggedIn, router]);
 
-      
-    </SafeAreaView>
-  );
+  // 리다이렉트 중에는 빈 화면 표시
+  return null;
 }
