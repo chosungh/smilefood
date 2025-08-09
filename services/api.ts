@@ -142,18 +142,6 @@ export const authAPI = {
     return response.data;
   },
 
-    // 식품 정보 조회
-  getFoodInfo: async (sid: string, fid: string) => {
-    const formData = createFormData({ sid, fid });
-    const response = await api.get('/food', {
-      params: formData,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    return response.data;
-  },
-
   // 식품 리스트 조회
   getFoodListInfo: async (sid: string) => {
     const response = await api.get(`/food/list?sid=${sid}`);
@@ -169,6 +157,17 @@ export const authAPI = {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
+  },
+
+  FoodChat: async (sid: string, fid1: string, fid2: string) => {
+    const formData = createFormData({ sid, fid1, fid2 });
+    const response = await api.get('/food/chat', {
+      params: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    } );
     return response.data;
   }
 };

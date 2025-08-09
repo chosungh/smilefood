@@ -1,10 +1,25 @@
-import { Modal, View, Text, Alert, TextInput, TouchableOpacity, Dimensions, StyleSheet } from 'react-native'
-import { useEffect, useState } from 'react';
+import { Image, Modal, View, Text, Alert, TextInput, TouchableOpacity, Dimensions, StyleSheet, ScrollView } from 'react-native'
+import { use, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router'
 import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '@/services/api';
+
+type FoodItem = {
+    barcode: string;
+    count: number;
+    created_at: string;
+    description: string;
+    expiration_date: string;
+    expiration_date_desc: string;
+    fid: string;
+    image_url: string;
+    name: string;
+    type: string;
+    uid: string;
+    volume: string;
+    };
 
 const MenuButtonAndModal = () => {
     const [AimodalVisible, setAiModalVisible] = useState(false);
@@ -13,10 +28,148 @@ const MenuButtonAndModal = () => {
     const [barcode, setBarcode] = useState('');
     const [foodCount, setFoodCount] = useState('');
     const { sessionId } = useAppContext();
+    const [ foodList, setFoodList ] = useState<FoodItem[]>([]);
+    const [selectedFoodIds, setSelectedFoodIds] = useState<string[]>([]); // 선택된 식품 ID 배열
+
+    useEffect(() => {
+        showFoodList();
+    }, []);
+
+    const handleCamera = () => {
+        // 카메라 기능 구현 예정
+        Alert.alert('카메라', '카메라 기능이 곧 구현됩니다.');
+    };
+
+    // 체크박스 토글 함수
+    const toggleFoodSelection = (fid: string) => {
+        setSelectedFoodIds(prev => {
+            const isSelected = prev.includes(fid);
+            
+            if (isSelected) {
+                // 이미 선택된 경우 제거
+                return prev.filter(id => id !== fid);
+            } else {
+                // 선택되지 않은 경우
+                if (prev.length >= 2) {
+                    // 이미 2개가 선택된 경우 알림
+                    Alert.alert('알림', '최대 2개까지 선택할 수 있습니다.');
+                    return prev;
+                } else {
+                    // 추가
+                    return [...prev, fid];
+                }
+            }
+        });
+    };
+    const FoodChat = async (fid1: string, fid2: string) => {
+        try {
+            if (sessionId) {
+                const response = await authAPI.FoodChat(sessionId, fid1, fid2);
+                
+                if (response.code === 200) {
+                    Alert.alert('AI 추천 결과', response.message, [
+                        { text: '확인' }
+                    ]);
+                } else {
+                    console.log(response.message);
+                }
+            }
+        } catch (error) {
+            Alert.alert('오류', 'AI 추천을 불러오지 못했습니다.');
+        }
+    };
+
+    const FoodCard = ({ item }: { item: FoodItem }) => {
+        const cardHeight = Dimensions.get('window').height / 10;
+        const isSelected = selectedFoodIds.includes(item.fid);
+        
+        return (
+          <TouchableOpacity 
+            style={[
+              {
+                height: cardHeight,
+                width: '100%',
+                flexDirection: 'row',
+                padding: 10,
+                marginBottom: 8,
+                backgroundColor: '#fff',
+                borderRadius: 8,
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 1,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 2,
+                elevation: 2,
+              },
+              isSelected && {
+                backgroundColor: '#f0f8ff',
+                borderWidth: 2,
+                borderColor: '#007AFF',
+              }
+            ]}
+            activeOpacity={0.7}
+            onPress={() => toggleFoodSelection(item.fid)}
+          >
+            <Image source={{ uri: item.image_url }} style={{
+              height: cardHeight-20,
+              width: cardHeight-20,
+              borderRadius: 6,
+              marginRight: 12,
+            }} />
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <Text style={{
+                fontSize: 16,
+                fontWeight: 'bold',
+                color: '#333',
+                marginBottom: 4,
+              }}>{item.name}</Text>
+              <Text style={{
+                fontSize: 14,
+                color: '#666',
+              }}>수량: {item.count}</Text>
+            </View>
+            
+            {/* 체크박스 */}
+            <View style={{
+              width: 24,
+              height: 24,
+              borderRadius: 12,
+              borderWidth: 2,
+              borderColor: isSelected ? '#007AFF' : '#ddd',
+              backgroundColor: isSelected ? '#007AFF' : 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+              alignSelf: 'center',
+              marginLeft: 8,
+            }}>
+              {isSelected && (
+                <Ionicons name="checkmark" size={16} color="#fff" />
+              )}
+            </View>
+          </TouchableOpacity>
+        );
+      };
 
     const toggle = () => {
         setIsOpen(prev => !prev); 
     };
+
+    const showFoodList = async () => {
+    try {
+      if (sessionId) {
+        const response = await authAPI.getFoodListInfo(sessionId); 
+        
+        if (response.code === 200) {
+          const foodList = response.data.food_list;
+          setFoodList(foodList);
+        }
+      }
+
+      
+    } catch (error) { }
+  }               
 
     const AddFood = async () => {
         if (!sessionId || barcode === '') {
@@ -65,11 +218,39 @@ const MenuButtonAndModal = () => {
           }
         }
       }
+
+    // 선택된 식품들로 작업하는 함수 (FoodChat 실행)
+    const handleSelectedFoods = async () => {
+        if (selectedFoodIds.length === 0) {
+            Alert.alert('알림', '식품을 선택해주세요.');
+            return;
+        }
+        
+        if (selectedFoodIds.length === 1) {
+            Alert.alert('알림', 'AI 추천을 위해 2개의 식품을 선택해주세요.');
+            return;
+        }
+
+        // 2개의 식품이 선택된 경우 FoodChat 함수 실행
+        if (selectedFoodIds.length === 2) {
+            const fid1 = selectedFoodIds[0];
+            const fid2 = selectedFoodIds[1];
+            
+            console.log('AI 추천 요청:', { fid1, fid2 });
+            
+            // FoodChat 함수 실행
+            await FoodChat(fid1, fid2);
+            
+            // 성공적으로 실행 후 모달 닫고 선택 초기화
+            setAiModalVisible(false);
+            setSelectedFoodIds([]);
+        }
+    };
  
     return (
         <View style={styles.ButtonListView}>
 
-            {isOpen && (<TouchableOpacity style={styles.HiddenButton} onPress={() => router.push('/Camera')}>
+            {isOpen && (<TouchableOpacity style={styles.HiddenButton} onPress={() => handleCamera()}>
                 <Ionicons name='scan-outline' size={32} />
             </TouchableOpacity>)}
 
@@ -89,21 +270,63 @@ const MenuButtonAndModal = () => {
                 <Modal
                     visible={AimodalVisible}
                     transparent={true}
-                    animationType="fade" // 'slide' 또는 'none'도 가능
-                    onRequestClose={() => setAiModalVisible(false)} // Android back 버튼 대응
+                    animationType="fade"
+                    onRequestClose={() => setAiModalVisible(false)}
                 >
                     <View style={styles.ModalBackgroundShade}>
                         <View style={styles.ModalBackground}>
                             <View style={{ position: 'absolute',top: 0, left: 0,width: '100%', padding: 20, zIndex: 20, borderRadius: 16}}>
-                                <TouchableOpacity onPress={() => setAiModalVisible(false)}> 
-                                    <Ionicons name='arrow-back' size={24}/>
-                                </TouchableOpacity>                
+                                <TouchableOpacity onPress={() => {
+                                    setAiModalVisible(false);
+                                    setSelectedFoodIds([]); // 모달 닫을 때 선택 초기화
+                                }}> 
+                                    <Ionicons name='arrow-back' size={24} />
+                                </TouchableOpacity>     
+                            </View>
+
+                            {/* 선택된 개수 표시 */}
+                            <View>
+                                <Text style={{
+                                    fontSize: 18,
+                                    fontWeight: 'bold',
+                                    color: '#333',
+                                    textAlign: 'center',
+                                }}>
+                                    선택된 식품: {selectedFoodIds.length}/2
+                                </Text>
                             </View>
                             
-                            <View style={{ flex: 1 }}>
-       
-                            </View>
-              
+                            <ScrollView style={{
+                                width: '100%',
+                                flex: 1,
+                                paddingHorizontal: 20,
+                            }}>
+                                {foodList.map((item) => (
+                                <FoodCard key={item.fid} item={item} />
+                                ))}
+                            </ScrollView>
+
+                            {/* 선택 완료 버튼 */}
+                            {selectedFoodIds.length > 0 && (
+                                <TouchableOpacity 
+                                    style={{
+                                        margin: 20,
+                                        backgroundColor: '#007AFF',
+                                        padding: 16,
+                                        borderRadius: 12,
+                                        alignItems: 'center',
+                                    }}
+                                    onPress={handleSelectedFoods}
+                                >
+                                    <Text style={{
+                                        color: '#fff',
+                                        fontSize: 16,
+                                        fontWeight: '600',
+                                    }}>
+                                        선택한 식품으로 작업하기
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 </Modal>
@@ -111,18 +334,37 @@ const MenuButtonAndModal = () => {
                 <Modal
                     visible={BarcodemodalVisible}
                     transparent={true}
-                    animationType="fade" // 'slide' 또는 'none'도 가능
-                    onRequestClose={() => setBarcodeModalVisible(false)} // Android back 버튼 대응
+                    animationType="fade"
+                    onRequestClose={() => setBarcodeModalVisible(false)}
                 >
-                    <View style={styles.ModalBackgroundShade}>
+                    <View style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                        paddingTop: Dimensions.get('window').height/3,
+                        paddingBottom: Dimensions.get('window').height/3,
+                        paddingLeft: Dimensions.get('window').width/10,
+                        paddingRight: Dimensions.get('window').width/10
+                    }}>
                         <View style={{
                             flex: 1,
                             alignItems: 'stretch',
                             justifyContent: 'center',
-                            borderRadius: 16,
+                            backgroundColor: '#fff',
+                            height: '100%',
                             width: '100%',
-                            backgroundColor: 'white',
+                            margin: 20,
+                            borderRadius: 16,
                             padding: 20,
+                            shadowColor: '#000',
+                            shadowOffset: {
+                            width: 0,
+                            height: 2,
+                            },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 3.84,
+                            elevation: 5,
                         }}>
                             <View style={{ position: 'absolute',top: 0, left: 0, width: '100%', padding: 20 }}>
                                 <TouchableOpacity onPress={() => setBarcodeModalVisible(false)}> 
@@ -146,8 +388,23 @@ const MenuButtonAndModal = () => {
                                 keyboardType="number-pad"
                             />
 
-                            <TouchableOpacity onPress={AddFood}>
-                                <Text>식품 추가</Text>
+                            <TouchableOpacity style={{
+                                position: 'absolute',
+                                bottom: 20,
+                                left: 20,
+                                right: 20,
+                                width: '100%',
+                                backgroundColor: '#007AFF',
+                                padding: 8,
+                                borderRadius: 12,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }} onPress={AddFood}>
+                                <Text style={{
+                                    color: '#fff',
+                                    fontSize: 16,
+                                    fontWeight: '600',
+                                }}>식품 추가</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -175,11 +432,14 @@ const styles = StyleSheet.create({
     elevation: 5,
     },
     input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        fontSize: 16,
+        backgroundColor: '#f9f9f9',
+        marginBottom: 10,
     },
     ButtonListView: {
         position: 'absolute',

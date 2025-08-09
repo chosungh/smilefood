@@ -2,6 +2,7 @@ import { authAPI } from '@/services/api';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  Modal,
   Alert,
   Dimensions,
   Image,
@@ -14,6 +15,7 @@ import {
 } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
 import MenuButtonAndModal from './menuButtonAndModal';
+import { Ionicons } from '@expo/vector-icons';
 
 type FoodItem = {
   barcode: string;
@@ -31,11 +33,14 @@ type FoodItem = {
 };
 
 export default function MainScreen() {
+  const [foodInfoModalVisible, setFoodInfoModalVisible] = useState(false);
   const router = useRouter();
   const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo } = useAppContext();
-  const [ foodList, setFoodList ] = useState<FoodItem[]>([]);
+  const [foodList, setFoodList] = useState<FoodItem[]>([]);
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
 
   useEffect(() => {
+  console.log(sessionId)
   const fetchUserInfo = async () => {
     try {
       if (sessionId) {
@@ -71,6 +76,7 @@ export default function MainScreen() {
     return () => clearInterval(interval);
   }, [sessionId]);
 
+  // 식품 리스트 조회
   const showFoodList = async () => {
     try {
       if (sessionId) {
@@ -83,42 +89,69 @@ export default function MainScreen() {
       }
 
       
-    } catch (error) { }
+    } catch (error) {
+      console.error('Error fetching food list:', error);
+      Alert.alert('오류', '식품 목록을 불러오는 중 오류가 발생했습니다.');
+    }
   }
-  
+
+  // 식품 삭제
+  const DeleteFood = async (fid: string) => {
+    try {
+      if (sessionId && fid) {
+        const response = await authAPI.deleteFood(sessionId, fid);
+        if (response.code === 200) {
+          Alert.alert('식품이 삭제되었습니다.');
+          showFoodList(); // 삭제 후 리스트 갱신
+          setFoodInfoModalVisible(false)
+        } else {
+          Alert.alert('오류', '식품 삭제에 실패했습니다.');
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting food:', error);
+      Alert.alert('오류', '식품 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 식품 정보 조회
+  const FoodInfo = async (item: FoodItem) => {
+    try {
+      if (item.fid && sessionId) {
+        const response = await authAPI.getFoodListInfo(sessionId);
+
+        const food = response.data.food_list.find((food: FoodItem) => food.fid === item.fid);
+        setSelectedFood(food);
+        if (response.code === 200) {
+          // const foodInfo = response.data.food_info;
+          // console.log(foodInfo);
+          
+        } else {
+          Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching food info:', error);
+      Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
+    }
+  }
+
+  // 식품 리스트 뷰 생성
   const FoodCard = ({ item }: { item: FoodItem }) => {
-    const cardHeight = Dimensions.get('window').height / 10;
     
     return (
-      <TouchableOpacity style={{
-        height: cardHeight,
-        width: '100%',
-        flexDirection: 'row',
-      }}>
-        <Image source={{ uri: item.image_url }} style={{
-          height: cardHeight-20,
-          width: cardHeight-20,
-        }} />
-        <View>
-          <Text style={{
-            fontSize: 16,
-            fontWeight: 'bold',
-            color: '#333',
-            marginBottom: 4,
-          }}>{item.name}</Text>
-          <Text style={{
-            fontSize: 14,
-            color: '#666',
-          }}>수량: {item.count}</Text>
+      <TouchableOpacity 
+        style={styles.FoodListView}
+        onPress={() => { FoodInfo(item);  setFoodInfoModalVisible(true); }}
+        activeOpacity={0.7}
+      >
+        <Image source={{ uri: item.image_url }} style={styles.FoodListViewImg} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Text style={styles.FoodListViewTitle}>{item.name}</Text>
+          <Text style={styles.FoodListViewContent}>수량: {item.count}</Text>
         </View>
       </TouchableOpacity>
     );
-  };
-
-
-  const handleCamera = () => {
-    // 카메라 기능 구현 예정
-    Alert.alert('카메라', '카메라 기능이 곧 구현됩니다.');
   };
 
   const handleSettings = () => {
@@ -158,22 +191,8 @@ export default function MainScreen() {
         </View>
       </View>
 
-      {/* Main Content */}
-      <View style={{
-        backgroundColor: '#fff',
-        height: Dimensions.get('window').height/2,
-        margin: 20,
-        borderRadius: 16,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: {
-          width: 0,
-          height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
-      }}>
+      {/* 식품 리스트 뷰 */}
+      <View style={styles.MainFoodListView}>
         <ScrollView>
           {foodList.map((item) => (
             <FoodCard key={item.fid} item={item} />
@@ -181,19 +200,115 @@ export default function MainScreen() {
         </ScrollView>
       </View>
 
-      {/* Footer */}
-      {/* <View style={styles.footer}>
-        <TouchableOpacity style={styles.cameraButton} onPress={handleCamera}>
-          <Text style={styles.cameraButtonIcon}>📷</Text>
-          <Text style={styles.cameraButtonText}>카메라로 이동</Text>
-        </TouchableOpacity>
-      </View> */}
       <MenuButtonAndModal />
+      
+      {/* 식품 세부정보 확인 모달 */}
+      <Modal
+        visible={foodInfoModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setFoodInfoModalVisible(false)}
+      >
+        <View style={styles.ModalBackgroundShade}>
+          <View style={styles.ModalBackground}>
+            <View style={styles.ModalArrowBack}>
+              <TouchableOpacity onPress={() => setFoodInfoModalVisible(false)} style={{ marginBottom: 20 }}>
+                <Ionicons name='arrow-back' size={24} />
+              </TouchableOpacity>
+            </View>
+            {selectedFood ? (
+              <ScrollView style={{padding: 20, flex: 1}}>
+                <View style={{ flex: 1, alignItems: 'flex-start', justifyContent: 'flex-start', gap: 20 }}>
+                  <View>
+                    <Image source={{ uri: selectedFood.image_url }} style={styles.FoodInfoModalImage} />
+                  </View>
+                  <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{selectedFood.name}</Text>
+          
+                  <View style={styles.DefalutView}>
+                    <View style={styles.FoodInfoModalInfo}>
+                      <Text style={styles.FoodInfoModalInfoTitle}>유형</Text>
+                      <Text style={styles.FoodInfoModalText}>{selectedFood.type}</Text>
+                    </View>
+                    <View style={styles.FoodInfoModalInfo}>
+                      <Text style={styles.FoodInfoModalInfoTitle}>수량</Text>
+                      <Text style={styles.FoodInfoModalText}>{selectedFood.count}</Text>
+                    </View>
+                    <View style={styles.FoodInfoModalInfo}>
+                      <Text style={styles.FoodInfoModalInfoTitle}>유통기한</Text>
+                      <Text style={styles.FoodInfoModalText}>{selectedFood.expiration_date_desc}</Text>
+                    </View>
+                    <View style={styles.FoodInfoModalInfo}>
+                      <Text style={styles.FoodInfoModalInfoTitle}>유통기한 만료 날짜</Text>
+                      <Text style={styles.FoodInfoModalText}>{selectedFood.expiration_date}</Text>
+                    </View>
+                    <View style={styles.FoodInfoModalInfo}>
+                      <Text style={styles.FoodInfoModalInfoTitle}>중량</Text>
+                      <Text style={styles.FoodInfoModalText}>{selectedFood.volume}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity style={styles.FoodInfoDeleteButton} onPress={() => DeleteFood(selectedFood.fid)}>
+                    <Text style={{ color: '#ff0000', fontSize: 16, fontWeight: 'bold' }}>삭제</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+        
+            ) : (
+              <Text>불러오는 중...</Text>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  DefalutView: {
+    backgroundColor: '#fff',
+    width: '100%',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  FoodListView: {
+    height: Dimensions.get('window').height / 10,
+    width: '100%',
+    flexDirection: 'row',
+    padding: 10,
+    marginBottom: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  FoodListViewImg: {
+    width: (Dimensions.get('window').height / 10)-20,
+    aspectRatio: 1,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  FoodListViewTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  FoodListViewContent: {
+    fontSize: 14,
+    color: '#666',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
@@ -274,89 +389,96 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  profileStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-    paddingTop: 20,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  welcomeText: {
-    fontSize: 18,
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 26,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  actionButton: {
-    alignItems: 'center',
+  MainFoodListView: {
     backgroundColor: '#fff',
+    height: Dimensions.get('window').height/2,
+    margin: 20,
+    borderRadius: 16,
     padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  ModalBackgroundShade: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    paddingTop: 100,
+    paddingBottom: 80,
+    paddingLeft: 40,
+    paddingRight: 40
+  },
+  ModalBackground: {
+    flex: 1,
+    alignItems: 'stretch',
+    justifyContent: 'center',
+    borderRadius: 16,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'white',
+  },
+  ModalArrowBack: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    padding: 20,
+    zIndex: 20,
+    borderRadius: 16
+  },
+  FoodInfoModalImage: {
+    width: '100%',
+    aspectRatio: 1,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 2.22,
-    elevation: 3,
-    minWidth: 80,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  actionButtonIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+  FoodInfoModalInfo: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f4f4f4',
+    paddingLeft: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+    gap: 8,
   },
-  actionButtonText: {
+  FoodInfoModalInfoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  FoodInfoModalText: {
     fontSize: 12,
-    color: '#333',
-    fontWeight: '600',
-    textAlign: 'center',
+    color: '#666'
   },
-  footer: {
+  FoodInfoDeleteButton: {
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-  },
-  cameraButton: {
-    backgroundColor: '#007AFF',
-    flexDirection: 'row',
+    width: '100%',
+    marginBottom: 20,
+    borderRadius: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingLeft: 20,
+    paddingRight: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
-  },
-  cameraButtonIcon: {
-    fontSize: 20,
-    marginRight: 8,
-  },
-  cameraButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  }
 });
