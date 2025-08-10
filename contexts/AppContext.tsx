@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 interface UserInfo {
   uid: string;
@@ -14,10 +14,12 @@ interface AppContextType {
   sessionId: string | null;
   isFirstLaunch: boolean;
   userInfo: UserInfo | null;
+  refreshFoodList: (() => void) | null;
   setIsLoggedIn: (value: boolean) => void;
   setSessionId: (value: string | null) => void;
   setIsFirstLaunch: (value: boolean) => void;
   setUserInfo: (value: UserInfo | null) => void;
+  setRefreshFoodList: (callback: (() => void) | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -35,6 +37,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [refreshFoodList, setRefreshFoodList] = useState<(() => void) | null>(null);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -65,41 +68,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     initializeApp();
   }, []);
 
-  const handleSetSessionId = async (value: string | null) => {
+  const handleSetSessionId = useCallback(async (value: string | null) => {
     setSessionId(value);
     if (value) {
       await AsyncStorage.setItem('sessionId', value);
     } else {
       await AsyncStorage.removeItem('sessionId');
     }
-  };
+  }, []);
 
-  const handleSetIsFirstLaunch = async (value: boolean) => {
+  const handleSetIsFirstLaunch = useCallback(async (value: boolean) => {
     setIsFirstLaunch(value);
     if (!value) {
       await AsyncStorage.setItem('hasLaunched', 'true');
     }
-  };
+  }, []);
 
-  const handleSetUserInfo = async (value: UserInfo | null) => {
+  const handleSetUserInfo = useCallback(async (value: UserInfo | null) => {
     setUserInfo(value);
     if (value) {
       await AsyncStorage.setItem('userInfo', JSON.stringify(value));
     } else {
       await AsyncStorage.removeItem('userInfo');
     }
-  };
+  }, []);
 
-  const value: AppContextType = {
+  const value = useMemo(() => ({
     isLoggedIn,
     sessionId,
     isFirstLaunch,
     userInfo,
+    refreshFoodList,
     setIsLoggedIn,
     setSessionId: handleSetSessionId,
     setIsFirstLaunch: handleSetIsFirstLaunch,
     setUserInfo: handleSetUserInfo,
-  };
+    setRefreshFoodList,
+  }), [isLoggedIn, sessionId, isFirstLaunch, userInfo, refreshFoodList, handleSetSessionId, handleSetIsFirstLaunch, handleSetUserInfo]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

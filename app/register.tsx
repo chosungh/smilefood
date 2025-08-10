@@ -128,8 +128,7 @@ export default function RegisterScreen() {
         setError(response.message || '회원가입에 실패했습니다.');
       }
     } catch (error: any) {
-      console.error('Register error:', error);
-      setError('회원가입 중 오류가 발생했습니다.');
+      setError(error.response.data.message || '회원가입 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }

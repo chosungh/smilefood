@@ -88,6 +88,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="이메일을 입력하세요"
+                placeholderTextColor="#999"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -101,6 +102,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="비밀번호를 입력하세요"
+                placeholderTextColor="#999"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry

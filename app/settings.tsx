@@ -2,12 +2,12 @@ import { authAPI } from '@/services/api';
 import { useRouter } from 'expo-router';
 import {
   Alert,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 
 export default function SettingsScreen() {
@@ -48,11 +48,15 @@ export default function SettingsScreen() {
   };
 
   const handleAccountDeletion = () => {
-    Alert.alert('회원탈퇴', '추후 개발 예정입니다.');
+    router.push('/delete-account');
+  };
+
+  const handleLoginHistory = () => {
+    router.push('/login-history');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper style={styles.container} backgroundColor="#f8f9fa">
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -67,6 +71,11 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
           
+          <TouchableOpacity style={styles.menuItem} onPress={handleLoginHistory}>
+            <Text style={styles.menuItemText}>로그인 기록</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
             <Text style={styles.menuItemText}>로그아웃</Text>
             <Text style={styles.menuItemArrow}>→</Text>
@@ -78,7 +87,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 

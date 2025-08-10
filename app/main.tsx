@@ -1,21 +1,23 @@
-import { authAPI } from '@/services/api';
+import { authAPI, foodAPI } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Modal,
   Alert,
   Dimensions,
-  Image,
+  Modal,
+  RefreshControl,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-  ScrollView
+  View
 } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
+import { preloadImages } from '../utils/imageCache';
 import MenuButtonAndModal from './menuButtonAndModal';
-import { Ionicons } from '@expo/vector-icons';
 
 type FoodItem = {
   barcode: string;
@@ -35,18 +37,73 @@ type FoodItem = {
 export default function MainScreen() {
   const [foodInfoModalVisible, setFoodInfoModalVisible] = useState(false);
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo } = useAppContext();
+  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo, setRefreshFoodList } = useAppContext();
   const [foodList, setFoodList] = useState<FoodItem[]>([]);
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const initialLoadDone = useRef(false);
 
+  // 식품 리스트를 메모이제이션하여 불필요한 리렌더링 방지
+  const memoizedFoodList = useMemo(() => foodList, [foodList]);
+  
+  // FoodCard 컴포넌트를 메모이제이션하여 불필요한 리렌더링 방지
+  const renderFoodCard = useCallback(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
+    return <FoodCard key={item.fid} item={item} isLast={isLast} />;
+  }, []);
+
+  // 초기 로드 - sessionId가 변경될 때만 실행
   useEffect(() => {
-  console.log(sessionId)
-  const fetchUserInfo = async () => {
-    try {
-      if (sessionId) {
+    if (sessionId && !initialLoadDone.current) {
+      const loadInitialData = async () => {
+        try {
+          // 유저 정보 가져오기
+          const sessionResponse = await authAPI.getSessionInfo(sessionId);
+          
+          if (sessionResponse.data.session_info.is_active === 0) {
+            Alert.alert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
+            setSessionId(null);
+            setUserInfo(null);
+            setIsLoggedIn(false);
+            router.replace('/login');
+            return;
+          }
+          
+          const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
+          setUserInfo(userResponse.data.user_info);
+
+          // 식품 리스트 가져오기 (초기 로드 시에만)
+          try {
+            const foodResponse = await foodAPI.getFoodList(sessionId);
+            if (foodResponse.code === 200) {
+              setFoodList(foodResponse.data.food_list);
+            // 이미지 프리로딩
+            const imageUrls = foodResponse.data.food_list
+              .map(food => food.image_url)
+              .filter(url => url && url.trim() !== '');
+              preloadImages(imageUrls);
+            }
+          } catch (error: any) {
+            Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
+          }
+          
+          initialLoadDone.current = true;
+        } catch (error: any) {
+          console.error('Initial load error:', error?.response);
+        }
+      };
+
+      loadInitialData();
+    }
+  }, [sessionId]); // sessionId가 변경될 때만 실행
+
+  // 5초마다 유저 정보만 갱신 - 식품 리스트는 절대 건드리지 않음
+  useEffect(() => {
+    if (!sessionId || !initialLoadDone.current) return;
+
+    const interval = setInterval(async () => {
+      try {
         const sessionResponse = await authAPI.getSessionInfo(sessionId);
         
-        // 세션 만료 확인
         if (sessionResponse.data.session_info.is_active === 0) {
           Alert.alert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
           setSessionId(null);
@@ -57,87 +114,111 @@ export default function MainScreen() {
         }
         
         const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
-        const userInfoData = userResponse.data.user_info;
-        setUserInfo(userInfoData);
-
-        // 여기서 food list도 같이 가져오기
-        showFoodList();
+        setUserInfo(userResponse.data.user_info);
+        // 식품 리스트는 절대 건드리지 않음 - 깜빡임 방지
+      } catch (error: any) {
+        console.error('User info fetch error:', error?.response);
       }
-    } catch (error: any) {
-      console.error('User info fetch error:', error?.response);
-    }
-  };
-
-    fetchUserInfo();
-
-    // 5초마다 갱신
-    const interval = setInterval(fetchUserInfo, 5000);
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [sessionId]);
+  }, [sessionId]); // sessionId가 변경될 때만 실행
 
-  // 식품 리스트 조회
-  const showFoodList = async () => {
+  // pull-to-refresh 핸들러 - 식품 리스트만 갱신
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
     try {
       if (sessionId) {
-        const response = await authAPI.getFoodListInfo(sessionId); 
-        
+        const response = await foodAPI.getFoodList(sessionId);
         if (response.code === 200) {
-          const foodList = response.data.food_list;
-          setFoodList(foodList);
+          setFoodList(response.data.food_list);
+          // 이미지 프리로딩
+          const imageUrls = response.data.food_list
+            .map(food => food.image_url)
+            .filter(url => url && url.trim() !== '');
+          preloadImages(imageUrls);
         }
       }
-
-      
-    } catch (error) {
-      console.error('Error fetching food list:', error);
-      Alert.alert('오류', '식품 목록을 불러오는 중 오류가 발생했습니다.');
+    } catch (error: any) {
+      Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setRefreshing(false);
     }
-  }
+  }, [sessionId]);
+
+  // onRefresh 함수를 AppContext에 등록
+  useEffect(() => {
+    setRefreshFoodList(() => onRefresh);
+    return () => setRefreshFoodList(null);
+  }, [onRefresh, setRefreshFoodList]);
 
   // 식품 삭제
   const DeleteFood = async (fid: string) => {
-    try {
-      if (sessionId && fid) {
-        const response = await authAPI.deleteFood(sessionId, fid);
-        if (response.code === 200) {
-          Alert.alert('식품이 삭제되었습니다.');
-          showFoodList(); // 삭제 후 리스트 갱신
-          setFoodInfoModalVisible(false)
-        } else {
-          Alert.alert('오류', '식품 삭제에 실패했습니다.');
-        }
-      }
-    } catch (error) {
-      console.error('Error deleting food:', error);
-      Alert.alert('오류', '식품 삭제 중 오류가 발생했습니다.');
-    }
+    Alert.alert(
+      '식품 삭제',
+      '식품을 삭제하시겠습니까?',
+      [
+        {
+          text: '취소',
+          style: 'cancel',
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (sessionId && fid) {
+                const response = await foodAPI.deleteFood(sessionId, fid);
+                if (response.code === 200) {
+                  Alert.alert('삭제 완료', response.message);
+                  onRefresh(); // 삭제 후 리스트 갱신
+                  setFoodInfoModalVisible(false);
+                } else {
+                  Alert.alert('오류', '식품 삭제에 실패했습니다.');
+                }
+              }
+            } catch (error) {
+              console.error('Error deleting food:', error);
+              Alert.alert('오류', '식품 삭제 중 오류가 발생했습니다.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   // 식품 정보 조회
   const FoodInfo = async (item: FoodItem) => {
     try {
       if (item.fid && sessionId) {
-        const response = await authAPI.getFoodListInfo(sessionId);
-
-        const food = response.data.food_list.find((food: FoodItem) => food.fid === item.fid);
-        setSelectedFood(food);
+        const response = await foodAPI.getFoodInfo(sessionId, item.fid);
+        
         if (response.code === 200) {
-          // const foodInfo = response.data.food_info;
-          // console.log(foodInfo);
-          
+          const foodInfo = response.data.food_info;
+          setSelectedFood(foodInfo);
         } else {
           Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
         }
       }
-    } catch (error) {
-      console.error('Error fetching food info:', error);
-      Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
+    } catch (error: any) {
+      Alert.alert('오류', error.response?.data?.message || '식품 정보를 불러오지 못했습니다.');
     }
   }
 
   // 식품 리스트 뷰 생성
-  const FoodCard = ({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
+  const FoodCard = React.memo(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
+    const [imageLoading, setImageLoading] = useState(true);
+    const [imageError, setImageError] = useState(false);
+    
+    const handleImageLoad = () => {
+      setImageLoading(false);
+      setImageError(false);
+    };
+
+    const handleImageError = () => {
+      setImageLoading(false);
+      setImageError(true);
+    };
     
     return (
       <TouchableOpacity 
@@ -145,14 +226,37 @@ export default function MainScreen() {
         onPress={() => { FoodInfo(item);  setFoodInfoModalVisible(true); }}
         activeOpacity={0.7}
       >
-        <Image source={{ uri: item.image_url }} style={styles.FoodListViewImg} />
+        <View style={styles.imageContainer}>
+          {item.image_url && !imageError ? (
+            <Image 
+              source={{ uri: item.image_url }} 
+              style={styles.FoodListViewImg} 
+              contentFit="cover"
+              transition={200}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              cachePolicy="memory-disk"
+            />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Text style={styles.placeholderText}>📦</Text>
+            </View>
+          )}
+          {imageLoading && item.image_url && (
+            <View style={styles.loadingOverlay}>
+              <View style={styles.loadingSpinner} />
+            </View>
+          )}
+        </View>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Text style={styles.FoodListViewTitle}>{item.name}</Text>
           <Text style={styles.FoodListViewContent}>수량: {item.count}</Text>
         </View>
       </TouchableOpacity>
     );
-  };
+  });
+  
+  FoodCard.displayName = 'FoodCard';
 
   const handleSettings = () => {
     router.push('/settings');
@@ -176,7 +280,9 @@ export default function MainScreen() {
               <Image 
                 source={{ uri: userInfo.profile_url }} 
                 style={styles.avatarImage}
-                resizeMode="cover"
+                contentFit="cover"
+                transition={200}
+                cachePolicy="memory-disk"
               />
             ) : (
               <Text style={styles.avatarText}>
@@ -193,10 +299,19 @@ export default function MainScreen() {
 
       {/* 식품 리스트 뷰 */}
       <View style={styles.MainFoodListView}>
-        <ScrollView>
-          {foodList.map((item, index) => (
-            <FoodCard key={item.fid} item={item} isLast={index === foodList.length - 1}/>
-          ))}
+        <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#007AFF']}
+              tintColor="#007AFF"
+            />
+          }
+        >
+          {memoizedFoodList.map((item, index) => 
+            renderFoodCard({ item, isLast: index === memoizedFoodList.length - 1 })
+          )}
         </ScrollView>
       </View>
 
@@ -220,7 +335,13 @@ export default function MainScreen() {
               <ScrollView style={{padding: 20, flex: 1}}>
                 <View style={{ flex: 1, alignItems: 'flex-start', justifyContent: 'flex-start', gap: 20 }}>
                   <View>
-                    <Image source={{ uri: selectedFood.image_url }} style={styles.FoodInfoModalImage} />
+                    <Image 
+                      source={{ uri: selectedFood.image_url }} 
+                      style={styles.FoodInfoModalImage} 
+                      contentFit="cover"
+                      transition={200}
+                      cachePolicy="memory-disk"
+                    />
                   </View>
                   <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{selectedFood.name}</Text>
           
@@ -293,11 +414,44 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 0,
   },
+  imageContainer: {
+    position: 'relative',
+    marginRight: 12,
+  },
   FoodListViewImg: {
     width: (Dimensions.get('window').height / 10)-20,
     aspectRatio: 1,
     borderRadius: 6,
-    marginRight: 12,
+  },
+  placeholderImage: {
+    width: (Dimensions.get('window').height / 10)-20,
+    height: (Dimensions.get('window').height / 10)-20,
+    borderRadius: 6,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 20,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  loadingSpinner: {
+    width: 16,
+    height: 16,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    borderTopColor: 'transparent',
+    borderRadius: 8,
   },
   FoodListViewTitle: {
     fontSize: 16,
