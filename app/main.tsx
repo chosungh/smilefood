@@ -137,11 +137,11 @@ export default function MainScreen() {
   }
 
   // 식품 리스트 뷰 생성
-  const FoodCard = ({ item }: { item: FoodItem }) => {
+  const FoodCard = ({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
     
     return (
       <TouchableOpacity 
-        style={styles.FoodListView}
+        style={[styles.FoodListView, isLast && styles.FoodListLastView]}
         onPress={() => { FoodInfo(item);  setFoodInfoModalVisible(true); }}
         activeOpacity={0.7}
       >
@@ -194,8 +194,8 @@ export default function MainScreen() {
       {/* 식품 리스트 뷰 */}
       <View style={styles.MainFoodListView}>
         <ScrollView>
-          {foodList.map((item) => (
-            <FoodCard key={item.fid} item={item} />
+          {foodList.map((item, index) => (
+            <FoodCard key={item.fid} item={item} isLast={index === foodList.length - 1}/>
           ))}
         </ScrollView>
       </View>
@@ -281,17 +281,17 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     padding: 10,
-    marginBottom: 8,
     backgroundColor: '#fff',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderBottomColor: '#f4f4f4',
+    borderBottomWidth: 1,
+  },
+  FoodListLastView: {
+    height: Dimensions.get('window').height / 10,
+    width: '100%',
+    flexDirection: 'row',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 0,
   },
   FoodListViewImg: {
     width: (Dimensions.get('window').height / 10)-20,
