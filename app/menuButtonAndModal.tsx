@@ -38,7 +38,7 @@ const MenuButtonAndModal = () => {
 
     const handleCamera = () => {
         // 카메라 기능 구현 예정
-        Alert.alert('카메라', '카메라 기능이 곧 구현됩니다.');
+        Alert.alert('카메라', '카메라 기능은 곧 구현됩니다.');
     };
 
     // 체크박스 토글 함수
@@ -311,7 +311,7 @@ const MenuButtonAndModal = () => {
 
                         {/* 타이틀 추가 */}
                         <View style={styles.modalTitleContainer}>
-                            <Text style={styles.modalTitle}>식품 등록</Text>
+                            <Text style={styles.modalTitle}>식품 수동 등록</Text>
                         </View>
 
                         <TextInput
