@@ -6,6 +6,7 @@ import {
   Platform,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -25,7 +26,7 @@ export default function RegisterScreen() {
   const [error, setError] = useState('');
   const [timer, setTimer] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -136,6 +137,7 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -318,9 +320,6 @@ const styles = StyleSheet.create({
   },
   verifiedButton: {
     backgroundColor: '#34C759',
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
   },
   verifyButtonText: {
     color: '#fff',
