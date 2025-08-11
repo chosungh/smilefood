@@ -1,4 +1,5 @@
 import { authAPI } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
   Alert,
@@ -66,7 +67,7 @@ export default function SettingsScreen() {
   };
 
   const handleRecipeLog = () => {
-    Alert.alert('레시피 이용 내역', '이용 내역 기능은 준비 중입니다.');
+    router.push('/chat-list');
   }
   
 
@@ -74,11 +75,10 @@ export default function SettingsScreen() {
     <SafeAreaWrapper style={styles.container} backgroundColor="#f8f9fa">
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#007AFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>설정</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       {/* Settings Content */}
@@ -96,7 +96,7 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>레시피</Text>
           
           <TouchableOpacity style={styles.menuItem} onPress={handleRecipeLog}>
-            <Text style={styles.menuItemText}>이용 내역</Text>
+            <Text style={styles.menuItemText}>레시피 추천 내역</Text>
             <Text style={styles.menuItemArrow}>→</Text>
           </TouchableOpacity>
         </View>
@@ -131,26 +131,37 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    borderBottomColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   backButton: {
-    fontSize: 24,
-    color: '#007AFF',
-    fontWeight: 'bold',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    zIndex: 10,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  headerSpacer: {
-    width: 24,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    zIndex: 1,
   },
   content: {
     flex: 1,

@@ -1,12 +1,11 @@
 import { authAPI, foodAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Dimensions,
-  Modal,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -34,16 +33,28 @@ type FoodItem = {
   type: string;
   uid: string;
   volume: string;
+  is_active: number;
 };
 
 export default function MainScreen() {
-  const [foodInfoModalVisible, setFoodInfoModalVisible] = useState(false);
   const router = useRouter();
   const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo, setRefreshFoodList } = useAppContext();
   const [foodList, setFoodList] = useState<FoodItem[]>([]);
-  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = useRef(false);
+
+  // API FoodItem을 로컬 FoodItem으로 변환하는 함수
+  const transformFoodItem = useCallback((apiFood: any): FoodItem => {
+    const expirationDate = new Date(apiFood.expiration_date);
+    const today = new Date();
+    const diffTime = expirationDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return {
+      ...apiFood,
+      days_remaining: diffDays,
+    };
+  }, []);
 
   // 식품 리스트를 메모이제이션하여 불필요한 리렌더링 방지
   const memoizedFoodList = useMemo(() => foodList, [foodList]);
@@ -77,12 +88,15 @@ export default function MainScreen() {
           try {
             const foodResponse = await foodAPI.getFoodList(sessionId);
             if (foodResponse.code === 200) {
-              setFoodList(foodResponse.data.food_list);
-            // 이미지 프리로딩
-            const imageUrls = foodResponse.data.food_list
-              .map(food => food.image_url)
-              .filter(url => url && url.trim() !== '');
-              preloadImages(imageUrls);
+              // 활성화된 아이템만 필터링하여 변환
+              const activeFoodList = foodResponse.data.food_list.filter((food: any) => food.is_active === 1);
+              const transformedFoodList = activeFoodList.map(transformFoodItem);
+              setFoodList(transformedFoodList);
+              // 이미지 프리로딩 (활성화된 아이템만)
+              const imageUrls = activeFoodList
+                .map(food => food.image_url)
+                .filter(url => url && url.trim() !== '');
+                preloadImages(imageUrls);
             }
           } catch (error: any) {
             // Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
@@ -133,9 +147,12 @@ export default function MainScreen() {
       if (sessionId) {
         const response = await foodAPI.getFoodList(sessionId);
         if (response.code === 200) {
-          setFoodList(response.data.food_list);
-          // 이미지 프리로딩
-          const imageUrls = response.data.food_list
+          // 활성화된 아이템만 필터링하여 변환
+          const activeFoodList = response.data.food_list.filter((food: any) => food.is_active === 1);
+          const transformedFoodList = activeFoodList.map(transformFoodItem);
+          setFoodList(transformedFoodList);
+          // 이미지 프리로딩 (활성화된 아이템만)
+          const imageUrls = activeFoodList
             .map(food => food.image_url)
             .filter(url => url && url.trim() !== '');
           preloadImages(imageUrls);
@@ -153,6 +170,29 @@ export default function MainScreen() {
     setRefreshFoodList(() => onRefresh);
     return () => setRefreshFoodList(null);
   }, [onRefresh, setRefreshFoodList]);
+
+  // 화면이 포커스될 때마다 음식 리스트 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      if (sessionId && initialLoadDone.current) {
+        const refreshFoodList = async () => {
+          try {
+            const foodResponse = await foodAPI.getFoodList(sessionId);
+            if (foodResponse.code === 200) {
+              // 활성화된 아이템만 필터링하여 변환
+              const activeFoodList = foodResponse.data.food_list.filter((food: any) => food.is_active === 1);
+              const transformedFoodList = activeFoodList.map(transformFoodItem);
+              setFoodList(transformedFoodList);
+            }
+          } catch (error) {
+            console.error('Error refreshing food list:', error);
+          }
+        };
+        
+        refreshFoodList();
+      }
+    }, [sessionId, transformFoodItem])
+  );
 
   // 식품 삭제
   const DeleteFood = async (fid: string) => {
@@ -174,7 +214,6 @@ export default function MainScreen() {
                 if (response.code === 200) {
                   // Alert.alert('삭제 완료', response.message);
                   onRefresh(); // 삭제 후 리스트 갱신
-                  setFoodInfoModalVisible(false);
                 } else {
                   Alert.alert('오류', '식품 삭제에 실패했습니다.');
                 }
@@ -189,23 +228,10 @@ export default function MainScreen() {
     );
   };
 
-  // 식품 정보 조회
-  const FoodInfo = async (item: FoodItem) => {
-    try {
-      if (item.fid && sessionId) {
-        const response = await foodAPI.getFoodInfo(sessionId, item.fid);
-        
-        if (response.code === 200) {
-          const foodInfo = response.data.food_info;
-          setSelectedFood(foodInfo);
-        } else {
-          Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
-        }
-      }
-    } catch (error: any) {
-      Alert.alert('오류', error.response?.data?.message || '식품 정보를 불러오지 못했습니다.');
-    }
-  }
+  // 식품 상세정보 화면으로 이동
+  const navigateToFoodDetail = (item: FoodItem) => {
+    router.push(`/food-detail?fid=${item.fid}`);
+  };
 
   // 식품 리스트 뷰 생성
   const FoodCard = React.memo(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
@@ -225,7 +251,7 @@ export default function MainScreen() {
     return (
       <TouchableOpacity 
         style={[styles.FoodListView, isLast && styles.FoodListLastView]}
-        onPress={() => { FoodInfo(item);  setFoodInfoModalVisible(true); }}
+        onPress={() => navigateToFoodDetail(item)}
         activeOpacity={0.7}
       >
         <View style={styles.imageContainer}>
@@ -270,9 +296,14 @@ export default function MainScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>SmileFood</Text>
-        <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
-          <Text style={styles.settingsButtonText}>설정</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.chatHistoryButton} onPress={() => router.push('/chat-list')}>
+            <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
+            <Text style={styles.settingsButtonText}>설정</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Profile Card */}
@@ -325,91 +356,11 @@ export default function MainScreen() {
       </View>
 
       <MenuButtonAndModal />
-      
-      {/* 식품 세부정보 확인 모달 */}
-      <Modal
-        visible={foodInfoModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setFoodInfoModalVisible(false)}
-      >
-        <View style={styles.ModalBackgroundShade}>
-          <View style={styles.ModalBackground}>
-            <View style={styles.ModalArrowBack}>
-              <TouchableOpacity onPress={() => setFoodInfoModalVisible(false)} style={{ marginBottom: 20 }}>
-                <Ionicons name='arrow-back' size={24} />
-              </TouchableOpacity>
-            </View>
-            {selectedFood ? (
-              <ScrollView style={{padding: 20, flex: 1}}>
-                <View style={{ flex: 1, alignItems: 'flex-start', justifyContent: 'flex-start', gap: 20 }}>
-                  <View>
-                    <Image 
-                      source={{ uri: selectedFood.image_url }} 
-                      style={styles.FoodInfoModalImage} 
-                      contentFit="cover"
-                      transition={200}
-                      cachePolicy="memory-disk"
-                    />
-                  </View>
-                  <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{selectedFood.name}</Text>
-          
-                  <View style={styles.DefalutView}>
-                    <View style={styles.FoodInfoModalInfo}>
-                      <Text style={styles.FoodInfoModalInfoTitle}>설명</Text>
-                      <Text style={styles.FoodInfoModalText}>{selectedFood.description}</Text>
-                    </View>
-                    <View style={styles.FoodInfoModalInfo}>
-                      <Text style={styles.FoodInfoModalInfoTitle}>유형</Text>
-                      <Text style={styles.FoodInfoModalText}>{selectedFood.type}</Text>
-                    </View>
-                    <View style={styles.FoodInfoModalInfo}>
-                      <Text style={styles.FoodInfoModalInfoTitle}>수량</Text>
-                      <Text style={styles.FoodInfoModalText}>{selectedFood.count}</Text>
-                    </View>
-                    <View style={styles.FoodInfoModalInfo}>
-                      <Text style={styles.FoodInfoModalInfoTitle}>유통기한</Text>
-                      <Text style={styles.FoodInfoModalText}>{selectedFood.expiration_date_desc}</Text>
-                    </View>
-                    <View style={styles.FoodInfoModalInfo}>
-                      <Text style={styles.FoodInfoModalInfoTitle}>유통기한 만료 날짜</Text>
-                      <Text style={styles.FoodInfoModalText}>{selectedFood.expiration_date}</Text>
-                    </View>
-                    <View style={styles.FoodInfoModalInfo}>
-                      <Text style={styles.FoodInfoModalInfoTitle}>중량</Text>
-                      <Text style={styles.FoodInfoModalText}>{selectedFood.volume}</Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity style={styles.FoodInfoDeleteButton} onPress={() => DeleteFood(selectedFood.fid)}>
-                    <Text style={{ color: '#ff0000', fontSize: 16, fontWeight: 'bold' }}>삭제</Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-        
-            ) : (
-              <Text>불러오는 중...</Text>
-            )}
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  DefalutView: {
-    backgroundColor: '#fff',
-    width: '100%',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
   FoodListView: {
     height: Dimensions.get('window').height / 10,
     width: '100%',
@@ -490,6 +441,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chatHistoryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f8f9fa',
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -558,87 +520,10 @@ const styles = StyleSheet.create({
   },
   MainFoodListView: {
     backgroundColor: '#fff',
-    height: Dimensions.get('window').height/2,
+    height: Dimensions.get('window').height/1.6,
     margin: 20,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  ModalBackgroundShade: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    paddingTop: 100,
-    paddingBottom: 80,
-    paddingLeft: 40,
-    paddingRight: 40
-  },
-  ModalBackground: {
-    flex: 1,
-    alignItems: 'stretch',
-    justifyContent: 'center',
-    borderRadius: 16,
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'white',
-  },
-  ModalArrowBack: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    padding: 20,
-    zIndex: 20,
-    borderRadius: 16
-  },
-  FoodInfoModalImage: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  FoodInfoModalInfo: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f4f4f4',
-    paddingLeft: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
-    gap: 8,
-  },
-  FoodInfoModalInfoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  FoodInfoModalText: {
-    fontSize: 12,
-    color: '#666'
-  },
-  FoodInfoDeleteButton: {
-    backgroundColor: '#fff',
-    width: '100%',
-    marginBottom: 20,
-    borderRadius: 12,
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 20,
-    paddingRight: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

@@ -1,27 +1,14 @@
-import { foodAPI } from '@/services/api';
+import { foodAPI, FoodItem } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
 import { preloadImages } from '../utils/imageCache';
 
-type FoodItem = {
-    barcode: string;
-    count: number;
-    created_at: string;
-    description: string;
-    expiration_date: string;
-    expiration_date_desc: string;
-    fid: string;
-    image_url: string;
-    name: string;
-    type: string;
-    uid: string;
-    volume: string;
-};
-
 const MenuButtonAndModal = () => {
+    const router = useRouter();
     const [AimodalVisible, setAiModalVisible] = useState(false);
     const [BarcodemodalVisible, setBarcodeModalVisible] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -59,18 +46,18 @@ const MenuButtonAndModal = () => {
     const FoodChat = async (fidList: string[]) => {
         try {
             if (sessionId && fidList.length > 0) {
-                const response = await foodAPI.FoodChat(sessionId, fidList);
+                const response = await foodAPI.requestFoodChat(sessionId, fidList);
             
                 if (response.code === 200) {
-                    Alert.alert('AI 추천 결과', response.data, [
-                        { text: '확인' }
-                    ]);
+                    // fcid를 받아서 채팅 상세 페이지로 이동
+                    const fcid = response.data.chat_info.fcid;
+                    router.push(`/chat-detail?fcid=${fcid}`);
                 } else {
                     Alert.alert('오류', response.message);
                 }
             }
-        } catch (error) {
-            Alert.alert('오류', 'AI 추천을 불러오지 못했습니다.');
+        } catch (error: any) {
+            Alert.alert('오류', error.response?.data?.message || 'AI 추천을 불러오지 못했습니다.');
         }
     };
 
@@ -153,10 +140,11 @@ const MenuButtonAndModal = () => {
                 const response = await foodAPI.getFoodList(sessionId); 
                 
                 if (response.code === 200) {
-                    const foodList = response.data.food_list;
-                    setFoodList(foodList);
-                    // 이미지 프리로딩
-                    const imageUrls = foodList
+                    // 활성화된 아이템만 필터링
+                    const activeFoodList = response.data.food_list.filter((food: any) => food.is_active === 1);
+                    setFoodList(activeFoodList);
+                    // 이미지 프리로딩 (활성화된 아이템만)
+                    const imageUrls = activeFoodList
                         .map(food => food.image_url)
                         .filter(url => url && url.trim() !== '');
                     preloadImages(imageUrls);
@@ -204,8 +192,8 @@ const MenuButtonAndModal = () => {
 
   // 선택된 식품들로 작업하는 함수 (FoodChat 실행)
   const handleSelectedFoods = async () => {
-    if (selectedFoodIds.length < 2) {
-        Alert.alert('알림', '2개 이상의 식품을 선택해주세요.');
+    if (selectedFoodIds.length < 1) {
+        Alert.alert('알림', '1개 이상의 식품을 선택해주세요.');
         return;
     }
 
@@ -279,14 +267,14 @@ const MenuButtonAndModal = () => {
                         <TouchableOpacity 
                             style={[
                                 styles.selectButton,
-                                selectedFoodIds.length < 2 && styles.selectButtonDisabled
+                                selectedFoodIds.length < 1 && styles.selectButtonDisabled
                             ]}
-                            onPress={selectedFoodIds.length > 1 ? handleSelectedFoods : undefined}
-                            disabled={selectedFoodIds.length < 2}
+                            onPress={selectedFoodIds.length >= 1 ? handleSelectedFoods : undefined}
+                            disabled={selectedFoodIds.length < 1}
                         >
                             <Text style={[
                                 styles.ModalButtonText,
-                                selectedFoodIds.length < 2 && styles.ModalButtonTextDisabled
+                                selectedFoodIds.length < 1 && styles.ModalButtonTextDisabled
                             ]}>
                                 {selectedFoodIds.length > 0 ? '레시피 추천' : '식품을 선택해주세요'}
                             </Text>
