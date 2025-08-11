@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -22,6 +22,13 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { setIsLoggedIn, setSessionId, setUserInfo } = useAppContext();
+
+  // 로그인 화면에 도달했을 때 네비게이션 스택을 완전히 초기화
+  useEffect(() => {
+    // 로그인 화면에 도달했을 때의 초기화 로직
+    // router.replace는 무한 루프를 일으킬 수 있으므로 제거
+    // 대신 AuthGuard에서 이미 처리하고 있음
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {

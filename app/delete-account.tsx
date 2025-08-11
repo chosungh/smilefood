@@ -14,7 +14,7 @@ import { useAppContext } from '../contexts/AppContext';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, setUserInfo, userInfo } = useAppContext();
+  const { setIsLoggedIn, setSessionId, setUserInfo, userInfo, clearNavigationStack } = useAppContext();
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -46,9 +46,7 @@ export default function DeleteAccountScreen() {
               const response = await authAPI.deleteAccount(userInfo.email, password);
               
               // 성공 시 로그아웃 처리
-              setSessionId(null);
-              setUserInfo(null);
-              setIsLoggedIn(false);
+              clearNavigationStack();
               
               Alert.alert(
                 '탈퇴 완료',
@@ -56,7 +54,15 @@ export default function DeleteAccountScreen() {
                 [
                   {
                     text: '확인',
-                    onPress: () => router.replace('/login'),
+                    onPress: () => {
+                      // 네비게이션 스택을 완전히 정리하고 로그인 화면으로 이동
+                      router.replace('/login');
+                      
+                      // 추가로 네비게이션 스택을 정리
+                      setTimeout(() => {
+                        router.replace('/login');
+                      }, 100);
+                    },
                   },
                 ]
               );

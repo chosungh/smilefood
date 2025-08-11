@@ -12,7 +12,7 @@ import { useAppContext } from '../contexts/AppContext';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, sessionId, setUserInfo } = useAppContext();
+  const { setIsLoggedIn, setSessionId, sessionId, setUserInfo, clearNavigationStack } = useAppContext();
 
   const handleLogout = async () => {
     Alert.alert(
@@ -33,10 +33,16 @@ export default function SettingsScreen() {
                 Alert.alert('로그아웃 성공', response.message);
               }
               
-              setSessionId(null);
-              setUserInfo(null);
-              setIsLoggedIn(false);
+              // AppContext의 clearNavigationStack 함수 사용
+              clearNavigationStack();
+              
+              // 네비게이션 스택을 완전히 정리하고 로그인 화면으로 이동
               router.replace('/login');
+              
+              // 추가로 네비게이션 스택을 정리
+              setTimeout(() => {
+                router.replace('/login');
+              }, 100);
             } catch (error: any) {
               console.error('Logout error:', error);
               Alert.alert('오류', error.response?.data?.message || '로그아웃 중 오류가 발생했습니다.');
@@ -55,6 +61,15 @@ export default function SettingsScreen() {
     router.push('/login-history');
   };
 
+  const handleProfileEdit = () => {
+    Alert.alert('프로필 편집', '편집 기능은 준비 중입니다.');
+  };
+
+  const handleRecipeLog = () => {
+    Alert.alert('레시피 이용 내역', '이용 내역 기능은 준비 중입니다.');
+  }
+  
+
   return (
     <SafeAreaWrapper style={styles.container} backgroundColor="#f8f9fa">
       {/* Header */}
@@ -68,6 +83,24 @@ export default function SettingsScreen() {
 
       {/* Settings Content */}
       <View style={styles.content}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>프로필</Text>
+          
+          <TouchableOpacity style={styles.menuItem} onPress={handleProfileEdit}>
+            <Text style={styles.menuItemText}>프로필 편집</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>레시피</Text>
+          
+          <TouchableOpacity style={styles.menuItem} onPress={handleRecipeLog}>
+            <Text style={styles.menuItemText}>이용 내역</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
           

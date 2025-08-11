@@ -25,6 +25,7 @@ type FoodItem = {
   count: number;
   created_at: string;
   description: string;
+  days_remaining: number;
   expiration_date: string;
   expiration_date_desc: string;
   fid: string;
@@ -84,7 +85,7 @@ export default function MainScreen() {
               preloadImages(imageUrls);
             }
           } catch (error: any) {
-            Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
+            // Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
           }
           
           initialLoadDone.current = true;
@@ -171,7 +172,7 @@ export default function MainScreen() {
               if (sessionId && fid) {
                 const response = await foodAPI.deleteFood(sessionId, fid);
                 if (response.code === 200) {
-                  Alert.alert('삭제 완료', response.message);
+                  // Alert.alert('삭제 완료', response.message);
                   onRefresh(); // 삭제 후 리스트 갱신
                   setFoodInfoModalVisible(false);
                 } else {
@@ -251,7 +252,7 @@ export default function MainScreen() {
         </View>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Text style={styles.FoodListViewTitle}>{item.name}</Text>
-          <Text style={styles.FoodListViewContent}>수량: {item.count}</Text>
+          <Text style={styles.FoodListViewContent}>유통기한 만료까지: {item.days_remaining}일</Text>
         </View>
       </TouchableOpacity>
     );
@@ -311,8 +312,14 @@ export default function MainScreen() {
             />
           }
         >
-          {memoizedFoodList.map((item, index) => 
-            renderFoodCard({ item, isLast: index === memoizedFoodList.length - 1 })
+          {memoizedFoodList.length > 0 ? (
+            memoizedFoodList.map((item, index) => 
+              renderFoodCard({ item, isLast: index === memoizedFoodList.length - 1 })
+            )
+          ) : (
+            <View style={styles.emptyStateContainer}>
+              <Text style={styles.emptyStateText}>등록된 식품 정보가 없습니다</Text>
+            </View>
           )}
         </ScrollView>
       </View>
@@ -348,6 +355,10 @@ export default function MainScreen() {
                   <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{selectedFood.name}</Text>
           
                   <View style={styles.DefalutView}>
+                    <View style={styles.FoodInfoModalInfo}>
+                      <Text style={styles.FoodInfoModalInfoTitle}>설명</Text>
+                      <Text style={styles.FoodInfoModalText}>{selectedFood.description}</Text>
+                    </View>
                     <View style={styles.FoodInfoModalInfo}>
                       <Text style={styles.FoodInfoModalInfoTitle}>유형</Text>
                       <Text style={styles.FoodInfoModalText}>{selectedFood.type}</Text>
@@ -636,5 +647,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   }
 });

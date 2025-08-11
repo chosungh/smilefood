@@ -182,7 +182,7 @@ const MenuButtonAndModal = () => {
             const response = await foodAPI.regiFood(sessionId, barcode, foodCount);
 
             if (response.code === 200) {
-                Alert.alert('식품 추가 완료', response.message, [{ text: '확인' }]);
+                // Alert.alert('식품 추가 완료', response.message, [{ text: '확인' }]);
                 // 성공 후 입력값 초기화
                 setBarcode('');
                 setFoodCount('1');
