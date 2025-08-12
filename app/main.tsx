@@ -19,6 +19,7 @@ import {
 import { useAppContext } from '../contexts/AppContext';
 import { preloadImages } from '../utils/imageCache';
 import MenuButtonAndModal from './menuButtonAndModal';
+import { getStatusBarHeight } from 'react-native-status-bar-height';
 
 type FoodItem = {
   barcode: string;
@@ -35,6 +36,8 @@ type FoodItem = {
   volume: string;
 };
 
+const statusbarHeight = getStatusBarHeight();
+
 export default function MainScreen() {
   const [foodInfoModalVisible, setFoodInfoModalVisible] = useState(false);
   const router = useRouter();
@@ -43,6 +46,8 @@ export default function MainScreen() {
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = useRef(false);
+  
+
 
   // 식품 리스트를 메모이제이션하여 불필요한 리렌더링 방지
   const memoizedFoodList = useMemo(() => foodList, [foodList]);
@@ -264,8 +269,7 @@ export default function MainScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>SmileFood</Text>
@@ -334,7 +338,7 @@ export default function MainScreen() {
               </TouchableOpacity>
             </View>
             {selectedFood ? (
-              <ScrollView style={{padding: 20, flex: 1}}>
+              <ScrollView style={{paddingLeft: 10,paddingRight: 10,flex: 1}}>
                 <View style={{ flex: 1, alignItems: 'flex-start', justifyContent: 'flex-start', gap: 20 }}>
                   <View>
                     <Image 
@@ -381,7 +385,7 @@ export default function MainScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -473,6 +477,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: statusbarHeight,
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: '#fff',
@@ -564,7 +569,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     paddingTop: 100,
     paddingBottom: 80,
     paddingLeft: 40,
@@ -577,7 +582,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     width: '100%',
     height: '100%',
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingLeft: 10,
+    paddingRight: 10,
     backgroundColor: 'white',
+    shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 3.84,
+        elevation: 5,
+        maxHeight: '80%',
   },
   ModalArrowBack: {
     position: 'absolute',
@@ -607,7 +625,7 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     paddingTop: 10,
     paddingBottom: 10,
-    gap: 8,
+    gap: 6,
   },
   FoodInfoModalInfoTitle: {
     fontSize: 16,
@@ -620,7 +638,7 @@ const styles = StyleSheet.create({
   FoodInfoDeleteButton: {
     backgroundColor: '#fff',
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 10,
     borderRadius: 12,
     paddingTop: 10,
     paddingBottom: 10,

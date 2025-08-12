@@ -9,6 +9,9 @@ import {
 } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
+import { getStatusBarHeight } from 'react-native-status-bar-height';
+
+const statusbarHeight = getStatusBarHeight();
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -56,7 +59,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaWrapper style={styles.container} backgroundColor="#f8f9fa">
+    <View style={styles.container} >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -71,27 +74,43 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
           
-          <TouchableOpacity style={styles.menuItem} onPress={handleLoginHistory}>
-            <Text style={styles.menuItemText}>로그인 기록</Text>
-            <Text style={styles.menuItemArrow}>→</Text>
-          </TouchableOpacity>
+          <View style={styles.DefalutView}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleLoginHistory}>
+              <Text style={styles.menuItemText}>로그인 기록</Text>
+              <Text style={styles.menuItemArrow}>→</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-            <Text style={styles.menuItemText}>로그아웃</Text>
-            <Text style={styles.menuItemArrow}>→</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.menuItem} onPress={handleAccountDeletion}>
-            <Text style={styles.menuItemText}>회원탈퇴</Text>
-            <Text style={styles.menuItemArrow}>→</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+              <Text style={styles.menuItemText}>로그아웃</Text>
+              <Text style={styles.menuItemArrow}>→</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={handleAccountDeletion}>
+              <Text style={styles.menuItemText}>회원탈퇴</Text>
+              <Text style={styles.menuItemArrow}>→</Text>
+            </TouchableOpacity>
+          </View>
+
         </View>
       </View>
-    </SafeAreaWrapper>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  DefalutView: {
+    backgroundColor: '#ffffff',
+    width: '100%',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
@@ -100,6 +119,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: statusbarHeight,
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: '#fff',
@@ -116,7 +136,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  headerSpacer: {
+  headerSpacer: {    
     width: 24,
   },
   content: {
@@ -124,8 +144,9 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   section: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
+    backgroundColor: '#f8f9fa',
+    paddingTop: 0,
+    padding: 20,
     borderRadius: 12,
     overflow: 'hidden',
   },

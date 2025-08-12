@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
         paddingTop: 100,
         paddingBottom: 80,
         paddingLeft: 40,
@@ -457,6 +457,16 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         paddingBottom: 20,
         paddingTop: 20,
+
+    shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 3.84,
+        elevation: 5,
+        maxHeight: '80%',
     },
     modalHeader: {
         position: 'absolute',
