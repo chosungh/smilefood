@@ -2,7 +2,6 @@ import { authAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
-  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,10 +12,10 @@ import { useAppContext } from '../contexts/AppContext';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, sessionId, setUserInfo, clearNavigationStack } = useAppContext();
+  const { setIsLoggedIn, setSessionId, sessionId, setUserInfo, clearNavigationStack, showAlert } = useAppContext();
 
   const handleLogout = async () => {
-    Alert.alert(
+    showAlert(
       '로그아웃',
       '로그아웃하시겠습니까?',
       [
@@ -31,7 +30,7 @@ export default function SettingsScreen() {
             try {
               if (sessionId) {
                 const response = await authAPI.logout(sessionId);
-                Alert.alert('로그아웃 성공', response.message);
+                showAlert('로그아웃 성공', response.message);
               }
               
               // AppContext의 clearNavigationStack 함수 사용
@@ -46,7 +45,7 @@ export default function SettingsScreen() {
               }, 100);
             } catch (error: any) {
               console.error('Logout error:', error);
-              Alert.alert('오류', error.response?.data?.message || '로그아웃 중 오류가 발생했습니다.');
+              showAlert('오류', error.response?.data?.message || '로그아웃 중 오류가 발생했습니다.');
             }
           },
         },
@@ -63,7 +62,7 @@ export default function SettingsScreen() {
   };
 
   const handleProfileEdit = () => {
-    Alert.alert('프로필 편집', '편집 기능은 준비 중입니다.');
+    showAlert('프로필 편집', '편집 기능은 준비 중입니다.');
   };
 
   const handleRecipeLog = () => {

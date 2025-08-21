@@ -7,6 +7,7 @@ import { Text, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import CustomAlert from '../components/CustomAlert';
 import { AppProvider, useAppContext } from '../contexts/AppContext';
 
 // 인증 상태를 확인하는 컴포넌트
@@ -36,6 +37,21 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [isLoggedIn, segments]);
 
   return <>{children}</>;
+}
+
+// 전역 Alert를 표시하는 컴포넌트
+function GlobalAlert() {
+  const { alertState, hideAlert } = useAppContext();
+  
+  return (
+    <CustomAlert
+      visible={alertState.visible}
+      title={alertState.title}
+      message={alertState.message}
+      buttons={alertState.buttons}
+      onDismiss={hideAlert}
+    />
+  );
 }
 
 export default function RootLayout() {
@@ -68,6 +84,7 @@ export default function RootLayout() {
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="dark" />
+          <GlobalAlert />
         </ThemeProvider>
       </AuthGuard>
     </AppProvider>

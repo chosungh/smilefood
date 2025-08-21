@@ -1,27 +1,26 @@
 import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '../services/api';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, setUserInfo } = useAppContext();
+  const { setIsLoggedIn, setSessionId, setUserInfo, showAlert } = useAppContext();
 
   // 로그인 화면에 도달했을 때 네비게이션 스택을 완전히 초기화
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('오류', '이메일과 비밀번호를 모두 입력해주세요.');
+      showAlert('오류', '이메일과 비밀번호를 모두 입력해주세요.');
       return;
     }
 
@@ -55,10 +54,10 @@ export default function LoginScreen() {
         
         router.replace('/main');
       } else {
-        Alert.alert('로그인 실패', response.message || '로그인에 실패했습니다.');
+        showAlert('로그인 실패', response.message || '로그인에 실패했습니다.');
       }
     } catch (error: any) {
-      Alert.alert('오류', error.response?.data?.message || '로그인 중 오류가 발생했습니다.');
+      showAlert('오류', error.response?.data?.message || '로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -66,26 +65,33 @@ export default function LoginScreen() {
 
   const handleFindPassword = async () => {
     if (!email) {
-      Alert.alert('오류', '이메일을 입력해주세요.');
+      showAlert('오류', '이메일을 입력해주세요.');
       return;
     }
 
     try {
       const response = await authAPI.findPassword(email);
-      Alert.alert('알림', response.message || '비밀번호 재설정 링크가 이메일로 전송되었습니다.');
+      showAlert('알림', response.message || '비밀번호 재설정 링크가 이메일로 전송되었습니다.');
     } catch (error: any) {
-      Alert.alert('오류', error.response?.data?.message || '비밀번호 찾기 중 오류가 발생했습니다.');
+      showAlert('오류', error.response?.data?.message || '비밀번호 찾기 중 오류가 발생했습니다.');
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper backgroundColor="#fff">
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
           <View style={styles.header}>
             <Text style={styles.title}>스마일푸드</Text>
             <Text style={styles.subtitle}>로그인하여 시작하세요</Text>
@@ -103,6 +109,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                returnKeyType="next"
               />
             </View>
 
@@ -116,6 +123,8 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
               />
             </View>
 
@@ -140,22 +149,22 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   keyboardContainer: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 20,
   },
   header: {
     alignItems: 'center',

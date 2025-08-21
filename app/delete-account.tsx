@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -15,22 +14,22 @@ import { useAppContext } from '../contexts/AppContext';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, setUserInfo, userInfo, clearNavigationStack } = useAppContext();
+  const { setIsLoggedIn, setSessionId, setUserInfo, userInfo, clearNavigationStack, showAlert } = useAppContext();
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDeleteAccount = async () => {
     if (!password.trim()) {
-      Alert.alert('오류', '비밀번호를 입력해주세요.');
+      showAlert('오류', '비밀번호를 입력해주세요.');
       return;
     }
 
     if (!userInfo?.email) {
-      Alert.alert('오류', '사용자 정보를 찾을 수 없습니다.');
+      showAlert('오류', '사용자 정보를 찾을 수 없습니다.');
       return;
     }
 
-    Alert.alert(
+    showAlert(
       '회원탈퇴',
       '정말로 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
       [
@@ -49,7 +48,7 @@ export default function DeleteAccountScreen() {
               // 성공 시 로그아웃 처리
               clearNavigationStack();
               
-              Alert.alert(
+              showAlert(
                 '탈퇴 완료',
                 response.message,
                 [
@@ -69,9 +68,9 @@ export default function DeleteAccountScreen() {
               );
             } catch (error: any) {
               if (error.response?.data?.message) {
-                Alert.alert('오류', error.response.data.message);
+                showAlert('오류', error.response.data.message);
               } else {
-                Alert.alert('오류', '회원탈퇴 중 오류가 발생했습니다.');
+                showAlert('오류', '회원탈퇴 중 오류가 발생했습니다.');
               }
             } finally {
               setIsLoading(false);

@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
 import { preloadImages } from '../utils/imageCache';
 
@@ -15,7 +15,7 @@ const MenuButtonAndModal = () => {
     const [barcode, setBarcode] = useState('');
     const [foodCount, setFoodCount] = useState('1');
     const [isAddingFood, setIsAddingFood] = useState(false);
-    const { sessionId, refreshFoodList } = useAppContext();
+    const { sessionId, refreshFoodList, showAlert } = useAppContext();
     const [foodList, setFoodList] = useState<FoodItem[]>([]);
     const [selectedFoodIds, setSelectedFoodIds] = useState<string[]>([]); // 선택된 식품 ID 배열
 
@@ -25,7 +25,7 @@ const MenuButtonAndModal = () => {
 
     const handleCamera = () => {
         // 카메라 기능 구현 예정
-        Alert.alert('카메라', '카메라 기능은 곧 구현됩니다.');
+        showAlert('카메라', '카메라 기능은 곧 구현됩니다.');
     };
 
     // 체크박스 토글 함수
@@ -53,11 +53,11 @@ const MenuButtonAndModal = () => {
                     const fcid = response.data.chat_info.fcid;
                     router.push(`/chat-detail?fcid=${fcid}`);
                 } else {
-                    Alert.alert('오류', response.message);
+                    showAlert('오류', response.message);
                 }
             }
         } catch (error: any) {
-            Alert.alert('오류', error.response?.data?.message || 'AI 추천을 불러오지 못했습니다.');
+            showAlert('오류', error.response?.data?.message || 'AI 추천을 불러오지 못했습니다.');
         }
     };
 
@@ -155,12 +155,12 @@ const MenuButtonAndModal = () => {
 
         const AddFood = async () => {
         if (!sessionId || barcode === '') {
-            Alert.alert('알림', '바코드를 입력해주세요.');
+            showAlert('알림', '바코드를 입력해주세요.');
             return;
         }
 
         if (!foodCount || parseInt(foodCount) < 1 || parseInt(foodCount) > 999) {
-            Alert.alert('알림', '식품 수량을 1~999 사이로 입력해주세요.');
+            showAlert('알림', '식품 수량을 1~999 사이로 입력해주세요.');
             return;
         }
 
@@ -181,10 +181,10 @@ const MenuButtonAndModal = () => {
                     refreshFoodList();
                 }
             } else {
-                Alert.alert('오류', response.message);
+                showAlert('오류', response.message);
             }
         } catch (error: any) {
-            Alert.alert('오류', error.response?.data?.message || '식품 추가에 실패했습니다.');
+            showAlert('오류', error.response?.data?.message || '식품 추가에 실패했습니다.');
         } finally {
             setIsAddingFood(false);
         }
@@ -193,7 +193,7 @@ const MenuButtonAndModal = () => {
   // 선택된 식품들로 작업하는 함수 (FoodChat 실행)
   const handleSelectedFoods = async () => {
     if (selectedFoodIds.length < 1) {
-        Alert.alert('알림', '1개 이상의 식품을 선택해주세요.');
+        showAlert('알림', '1개 이상의 식품을 선택해주세요.');
         return;
     }
 

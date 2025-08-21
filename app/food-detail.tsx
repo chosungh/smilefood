@@ -4,15 +4,14 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Dimensions,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
 
@@ -34,7 +33,7 @@ type FoodItem = {
 };
 
 export default function FoodDetailScreen() {
-  const { sessionId } = useAppContext();
+  const { sessionId, showAlert } = useAppContext();
   const router = useRouter();
   const { fid } = useLocalSearchParams<{ fid: string }>();
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
@@ -50,11 +49,11 @@ export default function FoodDetailScreen() {
           const foodInfo = response.data.food_info;
           setSelectedFood(foodInfo);
         } else {
-          Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
+          showAlert('오류', '식품 정보를 불러오지 못했습니다.');
         }
       }
     } catch (error: any) {
-      Alert.alert('오류', error.response?.data?.message || '식품 정보를 불러오지 못했습니다.');
+      showAlert('오류', error.response?.data?.message || '식품 정보를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -62,7 +61,7 @@ export default function FoodDetailScreen() {
 
   // 식품 삭제
   const DeleteFood = async (fid: string) => {
-    Alert.alert(
+    showAlert(
       '식품 삭제',
       '정말로 이 식품을 삭제하시겠습니까?',
       [
@@ -79,15 +78,15 @@ export default function FoodDetailScreen() {
                 const response = await foodAPI.deleteFood(sessionId, fid);
                 
                 if (response.code === 200) {
-                  Alert.alert('성공', '식품이 삭제되었습니다.');
+                  showAlert('성공', '식품이 삭제되었습니다.');
                   router.back();
                 } else {
-                  Alert.alert('오류', '식품 삭제에 실패했습니다.');
+                  showAlert('오류', '식품 삭제에 실패했습니다.');
                 }
               }
             } catch (error) {
               console.error('Error deleting food:', error);
-              Alert.alert('오류', '식품 삭제 중 오류가 발생했습니다.');
+              showAlert('오류', '식품 삭제 중 오류가 발생했습니다.');
             }
           },
         },

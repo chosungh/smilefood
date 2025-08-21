@@ -71,7 +71,7 @@ export default function ChatListScreen() {
         setError(response.message);
       }
     } catch (error: any) {
-      console.error('Error loading chat list:', error);
+      // console.error('Error loading chat list:', error);
       
       // 404 에러인 경우 채팅 내역 없음 처리(리스트 정상 표시)
       if (error.response?.status === 404) {

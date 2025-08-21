@@ -4,7 +4,6 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Dimensions,
   RefreshControl,
   SafeAreaView,
@@ -38,7 +37,7 @@ type FoodItem = {
 
 export default function MainScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo, setRefreshFoodList } = useAppContext();
+  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo, setRefreshFoodList, showAlert } = useAppContext();
   const [foodList, setFoodList] = useState<FoodItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = useRef(false);
@@ -56,95 +55,67 @@ export default function MainScreen() {
     };
   }, []);
 
-  // 식품 리스트를 메모이제이션하여 불필요한 리렌더링 방지
-  const memoizedFoodList = useMemo(() => foodList, [foodList]);
-  
-  // FoodCard 컴포넌트를 메모이제이션하여 불필요한 리렌더링 방지
-  const renderFoodCard = useCallback(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
-    return <FoodCard key={item.fid} item={item} isLast={isLast} />;
-  }, []);
-
-  // 초기 로드 - sessionId가 변경될 때만 실행
-  useEffect(() => {
-    if (sessionId && !initialLoadDone.current) {
-      const loadInitialData = async () => {
-        try {
-          // 유저 정보 가져오기
-          const sessionResponse = await authAPI.getSessionInfo(sessionId);
-          
-          if (sessionResponse.data.session_info.is_active === 0) {
-            Alert.alert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
-            setSessionId(null);
-            setUserInfo(null);
-            setIsLoggedIn(false);
-            router.replace('/login');
-            return;
-          }
-          
-          const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
-          setUserInfo(userResponse.data.user_info);
-
-          // 식품 리스트 가져오기 (초기 로드 시에만)
-          try {
-            const foodResponse = await foodAPI.getFoodList(sessionId);
-            if (foodResponse.code === 200) {
-              // 활성화된 아이템만 필터링하여 변환
-              const activeFoodList = foodResponse.data.food_list.filter((food: any) => food.is_active === 1);
-              const transformedFoodList = activeFoodList.map(transformFoodItem);
-              setFoodList(transformedFoodList);
-              // 이미지 프리로딩 (활성화된 아이템만)
-              const imageUrls = activeFoodList
-                .map(food => food.image_url)
-                .filter(url => url && url.trim() !== '');
-                preloadImages(imageUrls);
-            }
-          } catch (error: any) {
-            // Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
-          }
-          
-          initialLoadDone.current = true;
-        } catch (error: any) {
-          console.error('Initial load error:', error?.response);
-        }
-      };
-
-      loadInitialData();
-    }
-  }, [sessionId]); // sessionId가 변경될 때만 실행
-
-  // 5초마다 유저 정보만 갱신 - 식품 리스트는 절대 건드리지 않음
-  useEffect(() => {
-    if (!sessionId || !initialLoadDone.current) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const sessionResponse = await authAPI.getSessionInfo(sessionId);
-        
-        if (sessionResponse.data.session_info.is_active === 0) {
-          Alert.alert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
-          setSessionId(null);
-          setUserInfo(null);
-          setIsLoggedIn(false);
-          router.replace('/login');
-          return;
-        }
-        
-        const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
-        setUserInfo(userResponse.data.user_info);
-        // 식품 리스트는 절대 건드리지 않음 - 깜빡임 방지
-      } catch (error: any) {
-        console.error('User info fetch error:', error?.response);
+  // 세션 체크 함수
+  const checkSession = useCallback(async () => {
+    if (!sessionId) return false;
+    
+    try {
+      const sessionResponse = await authAPI.getSessionInfo(sessionId);
+      
+      if (sessionResponse.data.session_info.is_active === 0) {
+        console.log('Session expired, redirecting to login');
+        showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
+        setSessionId(null);
+        setUserInfo(null);
+        setIsLoggedIn(false);
+        router.replace('/login');
+        return false;
       }
-    }, 5000);
+      
+      return true;
+    } catch (error: any) {
+      console.error('Session check error:', error?.response || error);
+      return false;
+    }
+  }, [sessionId, showAlert, setSessionId, setUserInfo, setIsLoggedIn, router]);
 
-    return () => clearInterval(interval);
-  }, [sessionId]); // sessionId가 변경될 때만 실행
+  // 유저 정보 새로고침 함수
+  const refreshUserInfo = useCallback(async () => {
+    if (!sessionId) return;
+    
+    try {
+      const sessionResponse = await authAPI.getSessionInfo(sessionId);
+      
+      if (sessionResponse.data.session_info.is_active === 0) {
+        console.log('Session expired during user info refresh, redirecting to login');
+        showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
+        setSessionId(null);
+        setUserInfo(null);
+        setIsLoggedIn(false);
+        router.replace('/login');
+        return;
+      }
+      
+      const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
+      setUserInfo(userResponse.data.user_info);
+      console.log('User info refreshed successfully');
+    } catch (error: any) {
+      console.error('User info refresh error:', error?.response || error);
+    }
+  }, [sessionId, showAlert, setSessionId, setUserInfo, setIsLoggedIn, router]);
 
   // pull-to-refresh 핸들러 - 식품 리스트만 갱신
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       if (sessionId) {
+        // 세션 체크
+        const isSessionValid = await checkSession();
+        if (!isSessionValid) {
+          setRefreshing(false);
+          return;
+        }
+        
         const response = await foodAPI.getFoodList(sessionId);
         if (response.code === 200) {
           // 활성화된 아이템만 필터링하여 변환
@@ -159,44 +130,20 @@ export default function MainScreen() {
         }
       }
     } catch (error: any) {
-      Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
+      showAlert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setRefreshing(false);
     }
-  }, [sessionId]);
+  }, [sessionId, transformFoodItem, setFoodList, showAlert, checkSession]);
 
-  // onRefresh 함수를 AppContext에 등록
-  useEffect(() => {
-    setRefreshFoodList(() => onRefresh);
-    return () => setRefreshFoodList(null);
-  }, [onRefresh, setRefreshFoodList]);
-
-  // 화면이 포커스될 때마다 음식 리스트 새로고침
-  useFocusEffect(
-    useCallback(() => {
-      if (sessionId && initialLoadDone.current) {
-        const refreshFoodList = async () => {
-          try {
-            const foodResponse = await foodAPI.getFoodList(sessionId);
-            if (foodResponse.code === 200) {
-              // 활성화된 아이템만 필터링하여 변환
-              const activeFoodList = foodResponse.data.food_list.filter((food: any) => food.is_active === 1);
-              const transformedFoodList = activeFoodList.map(transformFoodItem);
-              setFoodList(transformedFoodList);
-            }
-          } catch (error) {
-            console.error('Error refreshing food list:', error);
-          }
-        };
-        
-        refreshFoodList();
-      }
-    }, [sessionId, transformFoodItem])
-  );
+  // 식품 상세정보 화면으로 이동
+  const navigateToFoodDetail = useCallback((item: FoodItem) => {
+    router.push(`/food-detail?fid=${item.fid}`);
+  }, [router]);
 
   // 식품 삭제
-  const DeleteFood = async (fid: string) => {
-    Alert.alert(
+  const DeleteFood = useCallback(async (fid: string) => {
+    showAlert(
       '식품 삭제',
       '식품을 삭제하시겠습니까?',
       [
@@ -212,29 +159,138 @@ export default function MainScreen() {
               if (sessionId && fid) {
                 const response = await foodAPI.deleteFood(sessionId, fid);
                 if (response.code === 200) {
-                  // Alert.alert('삭제 완료', response.message);
+                  // showAlert('삭제 완료', response.message);
                   onRefresh(); // 삭제 후 리스트 갱신
                 } else {
-                  Alert.alert('오류', '식품 삭제에 실패했습니다.');
+                  showAlert('오류', '식품 삭제에 실패했습니다.');
                 }
               }
             } catch (error) {
-              console.error('Error deleting food:', error);
-              Alert.alert('오류', '식품 삭제 중 오류가 발생했습니다.');
+              // console.error('Error deleting food:', error);
+              showAlert('오류', '식품 삭제 중 오류가 발생했습니다.');
             }
           },
         },
       ]
     );
-  };
+  }, [sessionId, onRefresh, showAlert]);
 
-  // 식품 상세정보 화면으로 이동
-  const navigateToFoodDetail = (item: FoodItem) => {
-    router.push(`/food-detail?fid=${item.fid}`);
-  };
+  // 식품 리스트를 메모이제이션하여 불필요한 리렌더링 방지
+  const memoizedFoodList = useMemo(() => foodList, [foodList]);
+  
+  // FoodCard 컴포넌트를 메모이제이션하여 불필요한 리렌더링 방지
+  const renderFoodCard = useCallback(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
+    return <FoodCard key={item.fid} item={item} isLast={isLast} onPress={navigateToFoodDetail} />;
+  }, [navigateToFoodDetail]);
+
+  const handleSettings = useCallback(() => {
+    router.push('/settings');
+  }, [router]);
+
+  // 초기 로드 - sessionId가 변경될 때만 실행
+  useEffect(() => {
+    if (sessionId && !initialLoadDone.current) {
+      console.log('Starting initial load...');
+      const loadInitialData = async () => {
+        try {
+          // 세션 체크
+          const isSessionValid = await checkSession();
+          if (!isSessionValid) return;
+          
+          // 유저 정보 가져오기
+          const userResponse = await authAPI.getUserInfo(sessionId);
+          setUserInfo(userResponse.data.user_info);
+          console.log('Initial user info loaded');
+
+          // 식품 리스트 가져오기 (초기 로드 시에만)
+          try {
+            const foodResponse = await foodAPI.getFoodList(sessionId);
+            if (foodResponse.code === 200) {
+              // 활성화된 아이템만 필터링하여 변환
+              const activeFoodList = foodResponse.data.food_list.filter((food: any) => food.is_active === 1);
+              const transformedFoodList = activeFoodList.map(transformFoodItem);
+              setFoodList(transformedFoodList);
+              console.log('Initial food list loaded:', transformedFoodList.length, 'items');
+              // 이미지 프리로딩 (활성화된 아이템만)
+              const imageUrls = activeFoodList
+                .map(food => food.image_url)
+                .filter(url => url && url.trim() !== '');
+                preloadImages(imageUrls);
+            }
+          } catch (error: any) {
+            console.error('Food list load error:', error?.response || error);
+            // Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
+          }
+          
+          initialLoadDone.current = true;
+          console.log('Initial load completed');
+        } catch (error: any) {
+          console.error('Initial load error:', error?.response || error);
+        }
+      };
+
+      loadInitialData();
+    }
+  }, [sessionId, transformFoodItem, checkSession, setUserInfo, setFoodList]);
+
+  // 5초마다 세션 체크 및 유저 정보 갱신
+  useEffect(() => {
+    if (!sessionId || !initialLoadDone.current) return;
+
+    console.log('Starting 5-second interval for session check and user info refresh');
+
+    const interval = setInterval(async () => {
+      console.log('Checking session and refreshing user info...');
+      
+      // 세션 체크
+      const isSessionValid = await checkSession();
+      if (!isSessionValid) return;
+      
+      // 유저 정보 새로고침
+      await refreshUserInfo();
+    }, 5000);
+
+    return () => {
+      console.log('Clearing 5-second interval');
+      clearInterval(interval);
+    };
+  }, [sessionId, checkSession, refreshUserInfo]);
+
+  // onRefresh 함수를 AppContext에 등록
+  useEffect(() => {
+    setRefreshFoodList(() => onRefresh);
+    return () => setRefreshFoodList(null);
+  }, [onRefresh, setRefreshFoodList]);
+
+  // 화면이 포커스될 때마다 음식 리스트 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      if (sessionId && initialLoadDone.current) {
+        const refreshFoodList = async () => {
+          try {
+            // 세션 체크
+            const isSessionValid = await checkSession();
+            if (!isSessionValid) return;
+            
+            const foodResponse = await foodAPI.getFoodList(sessionId);
+            if (foodResponse.code === 200) {
+              // 활성화된 아이템만 필터링하여 변환
+              const activeFoodList = foodResponse.data.food_list.filter((food: any) => food.is_active === 1);
+              const transformedFoodList = activeFoodList.map(transformFoodItem);
+              setFoodList(transformedFoodList);
+            }
+          } catch (error) {
+            console.error('Error refreshing food list:', error);
+          }
+        };
+        
+        refreshFoodList();
+      }
+    }, [sessionId, transformFoodItem, setFoodList, checkSession])
+  );
 
   // 식품 리스트 뷰 생성
-  const FoodCard = React.memo(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
+  const FoodCard = React.memo(({ item, isLast, onPress }: { item: FoodItem, isLast?: boolean, onPress: (item: FoodItem) => void }) => {
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     
@@ -251,7 +307,7 @@ export default function MainScreen() {
     return (
       <TouchableOpacity 
         style={[styles.FoodListView, isLast && styles.FoodListLastView]}
-        onPress={() => navigateToFoodDetail(item)}
+        onPress={() => onPress(item)}
         activeOpacity={0.7}
       >
         <View style={styles.imageContainer}>
@@ -285,10 +341,6 @@ export default function MainScreen() {
   });
   
   FoodCard.displayName = 'FoodCard';
-
-  const handleSettings = () => {
-    router.push('/settings');
-  };
 
   return (
     <SafeAreaView style={styles.container}>

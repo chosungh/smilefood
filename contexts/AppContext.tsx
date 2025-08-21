@@ -9,6 +9,17 @@ interface UserInfo {
   created_at: string;
 }
 
+interface AlertState {
+  visible: boolean;
+  title: string;
+  message: string;
+  buttons?: Array<{
+    text: string;
+    onPress?: () => void;
+    style?: 'default' | 'cancel' | 'destructive';
+  }>;
+}
+
 interface AppContextType {
   isLoggedIn: boolean;
   sessionId: string | null;
@@ -23,6 +34,15 @@ interface AppContextType {
   setRefreshFoodList: (callback: (() => void) | null) => void;
   clearNavigationStack: () => void;
   setNavigationReset: (value: boolean) => void;
+  
+  // Alert 관련 상태
+  alertState: AlertState;
+  showAlert: (title: string, message: string, buttons?: Array<{
+    text: string;
+    onPress?: () => void;
+    style?: 'default' | 'cancel' | 'destructive';
+  }>) => void;
+  hideAlert: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,6 +62,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [refreshFoodList, setRefreshFoodList] = useState<(() => void) | null>(null);
   const [isNavigationReset, setNavigationReset] = useState(false);
+  
+  // Alert 상태
+  const [alertState, setAlertState] = useState<AlertState>({
+    visible: false,
+    title: '',
+    message: '',
+    buttons: []
+  });
 
   // 네비게이션 스택을 정리하는 함수
   const clearNavigationStack = useCallback(() => {
@@ -117,6 +145,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
+  // Alert 표시 함수
+  const showAlert = useCallback((title: string, message: string, buttons?: Array<{
+    text: string;
+    onPress?: () => void;
+    style?: 'default' | 'cancel' | 'destructive';
+  }>) => {
+    setAlertState({
+      visible: true,
+      title,
+      message,
+      buttons: buttons || [{ text: '확인' }]
+    });
+  }, []);
+
+  // Alert 숨김 함수
+  const hideAlert = useCallback(() => {
+    setAlertState(prev => ({ ...prev, visible: false }));
+  }, []);
+
   const value = useMemo(() => ({
     isLoggedIn,
     sessionId,
@@ -131,7 +178,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     clearNavigationStack,
     isNavigationReset,
     setNavigationReset,
-  }), [isLoggedIn, sessionId, isFirstLaunch, userInfo, refreshFoodList, handleSetSessionId, handleSetIsFirstLaunch, handleSetUserInfo, clearNavigationStack, isNavigationReset, setNavigationReset]);
+    alertState,
+    showAlert,
+    hideAlert
+  }), [isLoggedIn, sessionId, isFirstLaunch, userInfo, refreshFoodList, handleSetSessionId, handleSetIsFirstLaunch, handleSetUserInfo, clearNavigationStack, isNavigationReset, setNavigationReset, alertState, showAlert, hideAlert]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

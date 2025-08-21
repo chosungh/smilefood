@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -16,7 +15,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { ChatInfo, foodAPI, FoodItem } from '../services/api';
 
 export default function ChatDetailScreen() {
-  const { sessionId } = useAppContext();
+  const { sessionId, showAlert } = useAppContext();
   const router = useRouter();
   const { fcid } = useLocalSearchParams<{ fcid: string }>();
   
@@ -27,7 +26,7 @@ export default function ChatDetailScreen() {
 
   useEffect(() => {
     if (!sessionId || !fcid) {
-      Alert.alert('오류', '필수 정보가 누락되었습니다.');
+      showAlert('오류', '필수 정보가 누락되었습니다.');
       router.back();
       return;
     }
