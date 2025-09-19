@@ -26,6 +26,7 @@ type FoodItem = {
   count: number;
   created_at: string;
   description: string;
+  ingredients?: string;
   expiration_date: string;
   expiration_date_desc: string;
   fid: string;
@@ -363,6 +364,10 @@ export default function MainScreen() {
                     <View style={styles.FoodInfoModalInfo}>
                       <Text style={styles.FoodInfoModalInfoTitle}>유통기한</Text>
                       <Text style={styles.FoodInfoModalText}>{selectedFood.expiration_date_desc}</Text>
+                    </View>
+                    <View style={styles.FoodInfoModalInfo}>
+                      <Text style={styles.FoodInfoModalInfoTitle}>원재료명</Text>
+                      <Text style={styles.FoodInfoModalText}>{selectedFood.ingredients}</Text>
                     </View>
                     <View style={styles.FoodInfoModalInfo}>
                       <Text style={styles.FoodInfoModalInfoTitle}>유통기한 만료 날짜</Text>

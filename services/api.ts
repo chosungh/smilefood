@@ -181,6 +181,7 @@ export const foodAPI = {
   // 음식 목록 조회
   getFoodList: async (sid: string): Promise<FoodListResponse> => {
     const response = await api.get(`/food/list?sid=${sid}`);
+    console.log(response.data);
     return response.data;
   },
 
@@ -211,6 +212,7 @@ export const foodAPI = {
         'Content-Type': 'multipart/form-data',
       },
     });
+    console.log(response.data);
     return response.data;
   },
 
