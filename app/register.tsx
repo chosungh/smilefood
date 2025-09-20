@@ -1,18 +1,18 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '../services/api';
 
 export default function RegisterScreen() {
@@ -28,6 +28,7 @@ export default function RegisterScreen() {
   const [isTimerActive, setIsTimerActive] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
+  const { showAlert } = useAppContext();
 
   useEffect(() => {
     if (isTimerActive && timer > 0) {
@@ -65,7 +66,7 @@ export default function RegisterScreen() {
       if (response.code === 200) {
         setShowVerificationInput(true);
         startTimer();
-        Alert.alert('성공', response.message);
+        showAlert('성공', response.message);
       } else {
         setError(response.message || '인증 코드 전송에 실패했습니다.');
       }
@@ -90,7 +91,7 @@ export default function RegisterScreen() {
       
       if (response.code === 200) {
         setIsEmailVerified(true);
-        Alert.alert('성공', response.message);
+        showAlert('성공', response.message);
       } else {
         setError(response.message || '인증 코드가 일치하지 않습니다.');
       }
@@ -119,7 +120,7 @@ export default function RegisterScreen() {
       const response = await authAPI.register(email, password, name);
       
       if (response.code === 200) {
-        Alert.alert('회원가입 완료', response.message, [
+        showAlert('회원가입 완료', response.message, [
           {
             text: '확인',
             onPress: () => router.replace('/login'),
@@ -136,13 +137,20 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper backgroundColor="#fff">
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
           <View style={styles.header}>
             <Text style={styles.title}>회원가입</Text>
             <Text style={styles.subtitle}>새로운 계정을 만들어보세요</Text>
@@ -252,22 +260,22 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   keyboardContainer: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 40,
+    paddingBottom: 20,
   },
   header: {
     alignItems: 'center',

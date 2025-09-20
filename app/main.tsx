@@ -269,6 +269,10 @@ export default function MainScreen() {
     router.push('/settings');
   };
 
+  const handleProfileEdit = () => {
+    router.push('/profile-edit');
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -280,7 +284,7 @@ export default function MainScreen() {
       </View>
 
       {/* Profile Card */}
-      <View style={styles.profileCard}>
+      <TouchableOpacity style={styles.profileCard} onPress={handleProfileEdit}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             {userInfo?.profile_url ? (
@@ -302,7 +306,7 @@ export default function MainScreen() {
             <Text style={styles.userEmail}>{userInfo?.email || 'user@example.com'}</Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* 식품 리스트 뷰 */}
       <View style={styles.MainFoodListView}>

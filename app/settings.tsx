@@ -1,4 +1,5 @@
 import { authAPI } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
   Alert,
@@ -13,12 +14,13 @@ import { getStatusBarHeight } from 'react-native-status-bar-height';
 
 const statusbarHeight = getStatusBarHeight();
 
+
 export default function SettingsScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, sessionId, setUserInfo } = useAppContext();
+  const { setIsLoggedIn, setSessionId, sessionId, setUserInfo, clearNavigationStack, showAlert } = useAppContext();
 
   const handleLogout = async () => {
-    Alert.alert(
+    showAlert(
       '로그아웃',
       '로그아웃하시겠습니까?',
       [
@@ -33,16 +35,22 @@ export default function SettingsScreen() {
             try {
               if (sessionId) {
                 const response = await authAPI.logout(sessionId);
-                Alert.alert('로그아웃 성공', response.message);
+                showAlert('로그아웃 성공', response.message);
               }
               
-              setSessionId(null);
-              setUserInfo(null);
-              setIsLoggedIn(false);
+              // AppContext의 clearNavigationStack 함수 사용
+              clearNavigationStack();
+              
+              // 네비게이션 스택을 완전히 정리하고 로그인 화면으로 이동
               router.replace('/login');
+              
+              // 추가로 네비게이션 스택을 정리
+              setTimeout(() => {
+                router.replace('/login');
+              }, 100);
             } catch (error: any) {
               console.error('Logout error:', error);
-              Alert.alert('오류', error.response?.data?.message || '로그아웃 중 오류가 발생했습니다.');
+              showAlert('오류', error.response?.data?.message || '로그아웃 중 오류가 발생했습니다.');
             }
           },
         },
@@ -58,39 +66,65 @@ export default function SettingsScreen() {
     router.push('/login-history');
   };
 
+  const handleProfileEdit = () => {
+    router.push('/profile-edit');
+  };
+
+  const handleRecipeLog = () => {
+    router.push('/chat-list');
+  }
+  
+
   return (
     <View style={styles.container} >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#007AFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>설정</Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.placeholder} />
       </View>
+
+      
 
       {/* Settings Content */}
       <View style={styles.content}>
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>프로필</Text>
+          
+          <TouchableOpacity style={styles.menuItem} onPress={handleProfileEdit}>
+            <Text style={styles.menuItemText}>프로필 편집</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>레시피</Text>
+          
+          <TouchableOpacity style={styles.menuItem} onPress={handleRecipeLog}>
+            <Text style={styles.menuItemText}>레시피 추천 내역</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
           
-          <View style={styles.DefalutView}>
-            <TouchableOpacity style={styles.menuItem} onPress={handleLoginHistory}>
-              <Text style={styles.menuItemText}>로그인 기록</Text>
-              <Text style={styles.menuItemArrow}>→</Text>
-            </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={handleLoginHistory}>
+            <Text style={styles.menuItemText}>로그인 기록</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-              <Text style={styles.menuItemText}>로그아웃</Text>
-              <Text style={styles.menuItemArrow}>→</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.menuItem} onPress={handleAccountDeletion}>
-              <Text style={styles.menuItemText}>회원탈퇴</Text>
-              <Text style={styles.menuItemArrow}>→</Text>
-            </TouchableOpacity>
-          </View>
-
+          <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+            <Text style={styles.menuItemText}>로그아웃</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.menuItem} onPress={handleAccountDeletion}>
+            <Text style={styles.menuItemText}>회원탈퇴</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -98,19 +132,6 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  DefalutView: {
-    backgroundColor: '#ffffff',
-    width: '100%',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
@@ -127,26 +148,31 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e9ecef',
   },
   backButton: {
-    fontSize: 24,
-    color: '#007AFF',
-    fontWeight: 'bold',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    flex: 1,
+    textAlign: 'center',
   },
-  headerSpacer: {    
-    width: 24,
+  placeholder: {
+    width: 40,
+    height: 40,
   },
   content: {
     flex: 1,
     paddingTop: 20,
   },
   section: {
-    backgroundColor: '#f8f9fa',
-    paddingTop: 0,
-    padding: 20,
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
     borderRadius: 12,
     overflow: 'hidden',
   },
