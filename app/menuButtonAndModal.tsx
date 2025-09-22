@@ -1,10 +1,12 @@
 import { foodAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
 import { preloadImages } from '../utils/imageCache';
+
 
 type FoodItem = {
     barcode: string;
@@ -22,6 +24,7 @@ type FoodItem = {
 };
 
 const MenuButtonAndModal = () => {
+    const router = useRouter();
     const [AimodalVisible, setAiModalVisible] = useState(false);
     const [BarcodemodalVisible, setBarcodeModalVisible] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -37,8 +40,7 @@ const MenuButtonAndModal = () => {
     }, [sessionId]);
 
     const handleCamera = () => {
-        // 카메라 기능 구현 예정
-        Alert.alert('카메라', '카메라 기능은 곧 구현됩니다.');
+        router.push('/BarcodeScan');
     };
 
     // 체크박스 토글 함수

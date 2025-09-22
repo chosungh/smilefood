@@ -20,6 +20,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { preloadImages } from '../utils/imageCache';
 import MenuButtonAndModal from './menuButtonAndModal';
 import { getStatusBarHeight } from 'react-native-status-bar-height';
+import BarcodeScan from './BarcodeScan';
 
 type FoodItem = {
   barcode: string;
