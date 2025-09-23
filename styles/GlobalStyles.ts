@@ -118,6 +118,7 @@ export const GlobalStyles = StyleSheet.create({
 
   // === 카드 스타일 ===
   card: {
+    width: '100%',
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
     shadowColor: Colors.black,

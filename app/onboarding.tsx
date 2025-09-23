@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlobalStyles, Colors, Spacing, FontSizes, BorderRadius, ScreenStyles } from '../styles/GlobalStyles';
+import SmileFoodLogo from '../components/SmileFoodLogo';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,7 +20,7 @@ const onboardingData = [
   {
     title: '스마일푸드에 \n 오신 것을 환영합니다',
     description: '제품을 촬영하고 관리해보세요.',
-    image: require('../assets/images/icon.png'),
+    isLogo: true, // 로고 사용 표시
   },
   {
     title: '간편한 음식 관리',
@@ -74,7 +75,14 @@ export default function OnboardingScreen() {
           <View key={index} style={ScreenStyles.onboardingSlide}>
             <View style={ScreenStyles.onboardingContent}>
               <View style={styles.imageContainer}>
-                <Image source={item.image} style={ScreenStyles.onboardingImage} />
+                {item.isLogo ? (
+                  <SmileFoodLogo 
+                    size={height < 700 ? 140 : 180} 
+                    showText={false}
+                  />
+                ) : (
+                  <Image source={item.image} style={ScreenStyles.onboardingImage} />
+                )}
               </View>
               <View style={styles.textContainer}>
                 <Text style={GlobalStyles.title}>{item.title}</Text>

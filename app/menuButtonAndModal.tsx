@@ -61,10 +61,10 @@ const MenuButtonAndModal = () => {
     const FoodChat = async (fidList: string[]) => {
         try {
             if (sessionId && fidList.length > 0) {
-                const response = await foodAPI.FoodChat(sessionId, fidList);
+                const response = await foodAPI.requestFoodChat(sessionId, fidList);
             
                 if (response.code === 200) {
-                    Alert.alert('AI 추천 결과', response.data, [
+                    Alert.alert('AI 추천 결과', response.data.chat_info.response || '추천 결과를 받았습니다.', [
                         { text: '확인' }
                     ]);
                 } else {

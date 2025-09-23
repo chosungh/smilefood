@@ -204,13 +204,20 @@ export default function MainScreen() {
                 return;
               }
               
+              console.log('Deleting food with fid:', fid); // 디버깅용 로그
               const response = await foodAPI.deleteFood(sessionId, fid);
               console.log('Delete response:', response); // 디버깅용 로그
               
               if (response && response.code === 200) {
-                Alert.alert('삭제 완료', response.message || '식품이 성공적으로 삭제되었습니다.');
-                await onRefresh(); // 삭제 후 리스트 갱신
+                // 모달을 먼저 닫고
                 setFoodInfoModalVisible(false);
+                setSelectedFood(null);
+                
+                // 성공 메시지 표시
+                Alert.alert('삭제 완료', response.message || '식품이 성공적으로 삭제되었습니다.');
+                
+                // 리스트 갱신
+                await onRefresh();
               } else {
                 console.error('Delete failed with response:', response);
                 Alert.alert('오류', response?.message || '식품 삭제에 실패했습니다.');
@@ -244,21 +251,29 @@ export default function MainScreen() {
     );
   };
 
-  // 식품 정보 조회
+  // 식품 정보 설정 (리스트의 기본 정보 사용)
   const FoodInfo = async (item: FoodItem) => {
     try {
+      // 먼저 기본 정보로 모달을 열어줌 (빠른 응답)
+      setSelectedFood(item);
+      
+      // 그 다음 상세 정보를 가져와서 업데이트 (선택사항)
       if (item.fid && sessionId) {
-        const response = await foodAPI.getFoodInfo(sessionId, item.fid);
-        
-        if (response.code === 200) {
-          const foodInfo = response.data.food_info;
-          setSelectedFood(foodInfo);
-        } else {
-          Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
+        try {
+          const response = await foodAPI.getFoodInfo(sessionId, item.fid);
+          
+          if (response.code === 200) {
+            const foodInfo = response.data.food_info;
+            setSelectedFood(foodInfo); // 상세 정보로 업데이트
+          }
+        } catch (detailError: any) {
+          console.error('Detail info fetch failed:', detailError);
+          // 상세 정보 가져오기 실패해도 기본 정보로 모달은 열림
         }
       }
     } catch (error: any) {
-      Alert.alert('오류', error.response?.data?.message || '식품 정보를 불러오지 못했습니다.');
+      console.error('FoodInfo error:', error);
+      Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
     }
   }
 
@@ -399,8 +414,8 @@ export default function MainScreen() {
         <View style={styles.ModalBackgroundShade}>
           <View style={styles.ModalBackground}>
             <View style={styles.ModalArrowBack}>
-              <TouchableOpacity onPress={() => setFoodInfoModalVisible(false)} style={{ marginBottom: 20 }}>
-                <Ionicons name='arrow-back' size={24} />
+              <TouchableOpacity onPress={() => setFoodInfoModalVisible(false)} style={styles.backButton}>
+                <Ionicons name='arrow-back' size={24}  color="#007AFF"/>
               </TouchableOpacity>
             </View>
             {selectedFood ? (
@@ -564,6 +579,14 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
     zIndex: 20,
     borderRadius: BorderRadius.xl,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   FoodInfoModalImage: {
     width: '100%',
