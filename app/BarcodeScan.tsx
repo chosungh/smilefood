@@ -15,6 +15,7 @@ export default function BarcodeScanScreen() {
   const [lastAddedBarcode, setLastAddedBarcode] = useState<string | null>(null);
   const [scanEnabled, setScanEnabled] = useState(false); // 기본적으로 비활성화
   const [scanCount, setScanCount] = useState(0); // 스캔 횟수 추적
+  const [hasScanned, setHasScanned] = useState(false); // 스캔 완료 여부 추적
   const cameraRef = useRef<CameraView>(null);
 
   if (!permission) {
@@ -51,9 +52,9 @@ export default function BarcodeScanScreen() {
 
   // 바코드 스캔 결과 처리 (자동 호출됨)
   async function onBarcodeScanned(scanningResult: any) {
-    // 스캔이 비활성화되었거나 처리 중이면 무시
-    if (!scanEnabled || isProcessing) {
-      console.log('스캔 무시됨 - scanEnabled:', scanEnabled, 'isProcessing:', isProcessing);
+    // 이미 스캔했거나, 스캔이 비활성화되었거나, 처리 중이면 무시
+    if (hasScanned || !scanEnabled || isProcessing || scanCount > 0) {
+      console.log('스캔 무시됨 - hasScanned:', hasScanned, 'scanEnabled:', scanEnabled, 'isProcessing:', isProcessing, 'scanCount:', scanCount);
       return;
     }
     
@@ -65,32 +66,14 @@ export default function BarcodeScanScreen() {
       return;
     }
     
-    // 같은 바코드를 이미 추가했다면 중복 방지
-    if (lastAddedBarcode === barcodeData) {
-      console.log('중복 바코드 감지:', barcodeData);
-      Alert.alert(
-        '중복 바코드', 
-        `이미 추가된 바코드입니다.\n바코드: ${barcodeData}`,
-        [
-          {
-            text: '확인',
-            onPress: () => {
-              // 중복 감지 시 스캔을 다시 비활성화
-              setScanEnabled(false);
-              setIsProcessing(false);
-            }
-          }
-        ]
-      );
-      return;
-    }
+    console.log('바코드 인식됨:', barcodeData);
     
-    console.log('바코드 인식됨:', barcodeData, '스캔 횟수:', scanCount + 1);
-    
-    // 즉시 스캔 비활성화 (연속 스캔 완전 차단)
+    // 즉시 모든 스캔 관련 상태 비활성화 (추가 스캔 완전 차단)
+    setHasScanned(true);
     setScanEnabled(false);
     setIsProcessing(true);
-    setScanCount(prev => prev + 1);
+    setScanCount(1); // 정확히 1로 설정
+    setLastAddedBarcode(barcodeData);
     
     try {
       if (!sessionId) {
@@ -102,9 +85,6 @@ export default function BarcodeScanScreen() {
       const response = await foodAPI.regiFood(sessionId, barcodeData, '1');
       
       if (response.code === 200) {
-        // 성공적으로 추가된 바코드 기록
-        setLastAddedBarcode(barcodeData);
-        
         // 성공 시 자동으로 메인 화면으로 돌아가기
         setTimeout(() => {
           // 메인 화면의 식품 리스트 새로고침
@@ -232,8 +212,12 @@ export default function BarcodeScanScreen() {
         ref={cameraRef}
         style={ScreenStyles.camera} 
         facing={facing} 
-        barcodeScannerSettings={{barcodeTypes: ['qr', 'code128', 'ean13', 'ean8']}}
-        onBarcodeScanned={onBarcodeScanned}
+        barcodeScannerSettings={
+          hasScanned || scanCount > 0 
+            ? undefined // 스캔 완료 시 바코드 스캔 기능 완전 비활성화
+            : {barcodeTypes: ['qr', 'code128', 'ean13', 'ean8']}
+        }
+        onBarcodeScanned={hasScanned || scanCount > 0 ? undefined : onBarcodeScanned}
       />
       
       {/* 스캔 가이드라인 오버레이 */}
@@ -253,7 +237,7 @@ export default function BarcodeScanScreen() {
         )}
         
         <Text style={ScreenStyles.instructionText}>
-          {scanCount > 0 
+          {hasScanned 
             ? '스캔이 완료되었습니다\n메인 화면으로 돌아갑니다'
             : isProcessing 
             ? '식품 추가 중...'
@@ -288,13 +272,13 @@ export default function BarcodeScanScreen() {
         <TouchableOpacity 
           style={[
             styles.button,
-            (isProcessing || scanCount > 0) && styles.processingButton
+            (isProcessing || hasScanned) && styles.processingButton
           ]} 
           onPress={toggleCameraFacing}
-          disabled={isProcessing || scanCount > 0}
+          disabled={isProcessing || hasScanned}
         >
           <Text style={styles.buttonText}>
-            {scanCount > 0 ? '완료됨' : '카메라 전환'}
+            {hasScanned ? '완료됨' : '카메라 전환'}
           </Text>
         </TouchableOpacity>
         
@@ -302,13 +286,13 @@ export default function BarcodeScanScreen() {
           style={[
             styles.button, 
             scanEnabled ? styles.scanningButton : styles.captureButton,
-            (isProcessing || scanCount > 0) && styles.processingButton
+            (isProcessing || hasScanned) && styles.processingButton
           ]} 
           onPress={enableBarcodeScanning}
-          disabled={isProcessing || scanEnabled || scanCount > 0}
+          disabled={isProcessing || scanEnabled || hasScanned}
         >
           <Text style={styles.buttonText}>
-            {scanCount > 0 
+            {hasScanned 
               ? '스캔 완료' 
               : isProcessing 
               ? '처리 중...' 
