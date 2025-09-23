@@ -476,4 +476,8 @@ const styles = StyleSheet.create({
     color: '#999',
     fontStyle: 'italic',
   },
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> origin/szkotgh

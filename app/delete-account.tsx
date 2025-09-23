@@ -1,8 +1,8 @@
 import { authAPI } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -14,22 +14,22 @@ import { useAppContext } from '../contexts/AppContext';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, setUserInfo, userInfo } = useAppContext();
+  const { setIsLoggedIn, setSessionId, setUserInfo, userInfo, clearNavigationStack, showAlert } = useAppContext();
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDeleteAccount = async () => {
     if (!password.trim()) {
-      Alert.alert('오류', '비밀번호를 입력해주세요.');
+      showAlert('오류', '비밀번호를 입력해주세요.');
       return;
     }
 
     if (!userInfo?.email) {
-      Alert.alert('오류', '사용자 정보를 찾을 수 없습니다.');
+      showAlert('오류', '사용자 정보를 찾을 수 없습니다.');
       return;
     }
 
-    Alert.alert(
+    showAlert(
       '회원탈퇴',
       '정말로 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
       [
@@ -46,25 +46,31 @@ export default function DeleteAccountScreen() {
               const response = await authAPI.deleteAccount(userInfo.email, password);
               
               // 성공 시 로그아웃 처리
-              setSessionId(null);
-              setUserInfo(null);
-              setIsLoggedIn(false);
+              clearNavigationStack();
               
-              Alert.alert(
+              showAlert(
                 '탈퇴 완료',
                 response.message,
                 [
                   {
                     text: '확인',
-                    onPress: () => router.replace('/login'),
+                    onPress: () => {
+                      // 네비게이션 스택을 완전히 정리하고 로그인 화면으로 이동
+                      router.replace('/login');
+                      
+                      // 추가로 네비게이션 스택을 정리
+                      setTimeout(() => {
+                        router.replace('/login');
+                      }, 100);
+                    },
                   },
                 ]
               );
             } catch (error: any) {
               if (error.response?.data?.message) {
-                Alert.alert('오류', error.response.data.message);
+                showAlert('오류', error.response.data.message);
               } else {
-                Alert.alert('오류', '회원탈퇴 중 오류가 발생했습니다.');
+                showAlert('오류', '회원탈퇴 중 오류가 발생했습니다.');
               }
             } finally {
               setIsLoading(false);
@@ -83,11 +89,10 @@ export default function DeleteAccountScreen() {
     <SafeAreaWrapper style={styles.container} backgroundColor="#f8f9fa">
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel}>
-          <Text style={styles.backButton}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={handleCancel}>
+          <Ionicons name="arrow-back" size={24} color="#007AFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>회원탈퇴</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       {/* Content */}
@@ -143,26 +148,37 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    borderBottomColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   backButton: {
-    fontSize: 24,
-    color: '#007AFF',
-    fontWeight: 'bold',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    zIndex: 10,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  headerSpacer: {
-    width: 24,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    zIndex: 1,
   },
   content: {
     flex: 1,

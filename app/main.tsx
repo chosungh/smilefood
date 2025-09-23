@@ -1,12 +1,10 @@
 import { authAPI, foodAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Dimensions,
-  Modal,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -28,7 +26,11 @@ type FoodItem = {
   count: number;
   created_at: string;
   description: string;
+<<<<<<< HEAD
   ingredients?: string;
+=======
+  days_remaining: number;
+>>>>>>> origin/szkotgh
   expiration_date: string;
   expiration_date_desc: string;
   fid: string;
@@ -37,133 +39,122 @@ type FoodItem = {
   type: string;
   uid: string;
   volume: string;
+  is_active: number;
 };
 
 const statusbarHeight = getStatusBarHeight();
 
 export default function MainScreen() {
-  const [foodInfoModalVisible, setFoodInfoModalVisible] = useState(false);
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo, setRefreshFoodList } = useAppContext();
+  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo, setRefreshFoodList, showAlert } = useAppContext();
   const [foodList, setFoodList] = useState<FoodItem[]>([]);
-  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = useRef(false);
   
 
 
-  // 식품 리스트를 메모이제이션하여 불필요한 리렌더링 방지
-  const memoizedFoodList = useMemo(() => foodList, [foodList]);
-  
-  // FoodCard 컴포넌트를 메모이제이션하여 불필요한 리렌더링 방지
-  const renderFoodCard = useCallback(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
-    return <FoodCard key={item.fid} item={item} isLast={isLast} />;
+  // API FoodItem을 로컬 FoodItem으로 변환하는 함수
+  const transformFoodItem = useCallback((apiFood: any): FoodItem => {
+    const expirationDate = new Date(apiFood.expiration_date);
+    const today = new Date();
+    const diffTime = expirationDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return {
+      ...apiFood,
+      days_remaining: diffDays,
+    };
   }, []);
 
-  // 초기 로드 - sessionId가 변경될 때만 실행
-  useEffect(() => {
-    if (sessionId && !initialLoadDone.current) {
-      const loadInitialData = async () => {
-        try {
-          // 유저 정보 가져오기
-          const sessionResponse = await authAPI.getSessionInfo(sessionId);
-          
-          if (sessionResponse.data.session_info.is_active === 0) {
-            Alert.alert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
-            setSessionId(null);
-            setUserInfo(null);
-            setIsLoggedIn(false);
-            router.replace('/login');
-            return;
-          }
-          
-          const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
-          setUserInfo(userResponse.data.user_info);
-
-          // 식품 리스트 가져오기 (초기 로드 시에만)
-          try {
-            const foodResponse = await foodAPI.getFoodList(sessionId);
-            if (foodResponse.code === 200) {
-              setFoodList(foodResponse.data.food_list);
-            // 이미지 프리로딩
-            const imageUrls = foodResponse.data.food_list
-              .map(food => food.image_url)
-              .filter(url => url && url.trim() !== '');
-              preloadImages(imageUrls);
-            }
-          } catch (error: any) {
-            Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
-          }
-          
-          initialLoadDone.current = true;
-        } catch (error: any) {
-          console.error('Initial load error:', error?.response);
-        }
-      };
-
-      loadInitialData();
-    }
-  }, [sessionId]); // sessionId가 변경될 때만 실행
-
-  // 5초마다 유저 정보만 갱신 - 식품 리스트는 절대 건드리지 않음
-  useEffect(() => {
-    if (!sessionId || !initialLoadDone.current) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const sessionResponse = await authAPI.getSessionInfo(sessionId);
-        
-        if (sessionResponse.data.session_info.is_active === 0) {
-          Alert.alert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
-          setSessionId(null);
-          setUserInfo(null);
-          setIsLoggedIn(false);
-          router.replace('/login');
-          return;
-        }
-        
-        const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
-        setUserInfo(userResponse.data.user_info);
-        // 식품 리스트는 절대 건드리지 않음 - 깜빡임 방지
-      } catch (error: any) {
-        console.error('User info fetch error:', error?.response);
+  // 세션 체크 함수
+  const checkSession = useCallback(async () => {
+    if (!sessionId) return false;
+    
+    try {
+      const sessionResponse = await authAPI.getSessionInfo(sessionId);
+      
+      if (sessionResponse.data.session_info.is_active === 0) {
+        console.log('Session expired, redirecting to login');
+        showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
+        setSessionId(null);
+        setUserInfo(null);
+        setIsLoggedIn(false);
+        router.replace('/login');
+        return false;
       }
-    }, 5000);
+      
+      return true;
+    } catch (error: any) {
+      console.error('Session check error:', error?.response || error);
+      return false;
+    }
+  }, [sessionId, showAlert, setSessionId, setUserInfo, setIsLoggedIn, router]);
 
-    return () => clearInterval(interval);
-  }, [sessionId]); // sessionId가 변경될 때만 실행
+  // 유저 정보 새로고침 함수
+  const refreshUserInfo = useCallback(async () => {
+    if (!sessionId) return;
+    
+    try {
+      const sessionResponse = await authAPI.getSessionInfo(sessionId);
+      
+      if (sessionResponse.data.session_info.is_active === 0) {
+        console.log('Session expired during user info refresh, redirecting to login');
+        showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
+        setSessionId(null);
+        setUserInfo(null);
+        setIsLoggedIn(false);
+        router.replace('/login');
+        return;
+      }
+      
+      const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
+      setUserInfo(userResponse.data.user_info);
+      console.log('User info refreshed successfully');
+    } catch (error: any) {
+      console.error('User info refresh error:', error?.response || error);
+    }
+  }, [sessionId, showAlert, setSessionId, setUserInfo, setIsLoggedIn, router]);
 
   // pull-to-refresh 핸들러 - 식품 리스트만 갱신
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       if (sessionId) {
+        // 세션 체크
+        const isSessionValid = await checkSession();
+        if (!isSessionValid) {
+          setRefreshing(false);
+          return;
+        }
+        
         const response = await foodAPI.getFoodList(sessionId);
         if (response.code === 200) {
-          setFoodList(response.data.food_list);
-          // 이미지 프리로딩
-          const imageUrls = response.data.food_list
+          // 활성화된 아이템만 필터링하여 변환
+          const activeFoodList = response.data.food_list.filter((food: any) => food.is_active === 1);
+          const transformedFoodList = activeFoodList.map(transformFoodItem);
+          setFoodList(transformedFoodList);
+          // 이미지 프리로딩 (활성화된 아이템만)
+          const imageUrls = activeFoodList
             .map(food => food.image_url)
             .filter(url => url && url.trim() !== '');
           preloadImages(imageUrls);
         }
       }
     } catch (error: any) {
-      Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
+      showAlert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setRefreshing(false);
     }
-  }, [sessionId]);
+  }, [sessionId, transformFoodItem, setFoodList, showAlert, checkSession]);
 
-  // onRefresh 함수를 AppContext에 등록
-  useEffect(() => {
-    setRefreshFoodList(() => onRefresh);
-    return () => setRefreshFoodList(null);
-  }, [onRefresh, setRefreshFoodList]);
+  // 식품 상세정보 화면으로 이동
+  const navigateToFoodDetail = useCallback((item: FoodItem) => {
+    router.push(`/food-detail?fid=${item.fid}`);
+  }, [router]);
 
   // 식품 삭제
-  const DeleteFood = async (fid: string) => {
-    Alert.alert(
+  const DeleteFood = useCallback(async (fid: string) => {
+    showAlert(
       '식품 삭제',
       '식품을 삭제하시겠습니까?',
       [
@@ -176,6 +167,7 @@ export default function MainScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+<<<<<<< HEAD
               if (!sessionId) {
                 Alert.alert('오류', '세션이 만료되었습니다. 다시 로그인하세요.');
                 return;
@@ -219,33 +211,143 @@ export default function MainScreen() {
               }
               
               Alert.alert('오류', errorMessage);
+=======
+              if (sessionId && fid) {
+                const response = await foodAPI.deleteFood(sessionId, fid);
+                if (response.code === 200) {
+                  // showAlert('삭제 완료', response.message);
+                  onRefresh(); // 삭제 후 리스트 갱신
+                } else {
+                  showAlert('오류', '식품 삭제에 실패했습니다.');
+                }
+              }
+            } catch (error) {
+              // console.error('Error deleting food:', error);
+              showAlert('오류', '식품 삭제 중 오류가 발생했습니다.');
+>>>>>>> origin/szkotgh
             }
           },
         },
       ]
     );
-  };
+  }, [sessionId, onRefresh, showAlert]);
 
-  // 식품 정보 조회
-  const FoodInfo = async (item: FoodItem) => {
-    try {
-      if (item.fid && sessionId) {
-        const response = await foodAPI.getFoodInfo(sessionId, item.fid);
-        
-        if (response.code === 200) {
-          const foodInfo = response.data.food_info;
-          setSelectedFood(foodInfo);
-        } else {
-          Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
+  // 식품 리스트를 메모이제이션하여 불필요한 리렌더링 방지
+  const memoizedFoodList = useMemo(() => foodList, [foodList]);
+  
+  // FoodCard 컴포넌트를 메모이제이션하여 불필요한 리렌더링 방지
+  const renderFoodCard = useCallback(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
+    return <FoodCard key={item.fid} item={item} isLast={isLast} onPress={navigateToFoodDetail} />;
+  }, [navigateToFoodDetail]);
+
+  const handleSettings = useCallback(() => {
+    router.push('/settings');
+  }, [router]);
+
+  // 초기 로드 - sessionId가 변경될 때만 실행
+  useEffect(() => {
+    if (sessionId && !initialLoadDone.current) {
+      console.log('Starting initial load...');
+      const loadInitialData = async () => {
+        try {
+          // 세션 체크
+          const isSessionValid = await checkSession();
+          if (!isSessionValid) return;
+          
+          // 유저 정보 가져오기
+          const userResponse = await authAPI.getUserInfo(sessionId);
+          setUserInfo(userResponse.data.user_info);
+          console.log('Initial user info loaded');
+
+          // 식품 리스트 가져오기 (초기 로드 시에만)
+          try {
+            const foodResponse = await foodAPI.getFoodList(sessionId);
+            if (foodResponse.code === 200) {
+              // 활성화된 아이템만 필터링하여 변환
+              const activeFoodList = foodResponse.data.food_list.filter((food: any) => food.is_active === 1);
+              const transformedFoodList = activeFoodList.map(transformFoodItem);
+              setFoodList(transformedFoodList);
+              console.log('Initial food list loaded:', transformedFoodList.length, 'items');
+              // 이미지 프리로딩 (활성화된 아이템만)
+              const imageUrls = activeFoodList
+                .map(food => food.image_url)
+                .filter(url => url && url.trim() !== '');
+                preloadImages(imageUrls);
+            }
+          } catch (error: any) {
+            console.error('Food list load error:', error?.response || error);
+            // Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
+          }
+          
+          initialLoadDone.current = true;
+          console.log('Initial load completed');
+        } catch (error: any) {
+          console.error('Initial load error:', error?.response || error);
         }
-      }
-    } catch (error: any) {
-      Alert.alert('오류', error.response?.data?.message || '식품 정보를 불러오지 못했습니다.');
+      };
+
+      loadInitialData();
     }
-  }
+  }, [sessionId, transformFoodItem, checkSession, setUserInfo, setFoodList]);
+
+  // 5초마다 세션 체크 및 유저 정보 갱신
+  useEffect(() => {
+    if (!sessionId || !initialLoadDone.current) return;
+
+    console.log('Starting 5-second interval for session check and user info refresh');
+
+    const interval = setInterval(async () => {
+      console.log('Checking session and refreshing user info...');
+      
+      // 세션 체크
+      const isSessionValid = await checkSession();
+      if (!isSessionValid) return;
+      
+      // 유저 정보 새로고침
+      await refreshUserInfo();
+    }, 5000);
+
+    return () => {
+      console.log('Clearing 5-second interval');
+      clearInterval(interval);
+    };
+  }, [sessionId, checkSession, refreshUserInfo]);
+
+  // onRefresh 함수를 AppContext에 등록
+  useEffect(() => {
+    setRefreshFoodList(() => onRefresh);
+    return () => setRefreshFoodList(null);
+  }, [onRefresh, setRefreshFoodList]);
+
+  // 화면이 포커스될 때마다 음식 리스트 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      if (sessionId && initialLoadDone.current) {
+        const refreshFoodList = async () => {
+          try {
+            // 세션 체크
+            const isSessionValid = await checkSession();
+            if (!isSessionValid) return;
+            
+            const foodResponse = await foodAPI.getFoodList(sessionId);
+            if (foodResponse.code === 200) {
+              // 활성화된 아이템만 필터링하여 변환
+              const activeFoodList = foodResponse.data.food_list.filter((food: any) => food.is_active === 1);
+              const transformedFoodList = activeFoodList.map(transformFoodItem);
+              setFoodList(transformedFoodList);
+            }
+          } catch (error) {
+            console.error('Error refreshing food list:', error);
+          }
+        };
+        
+        refreshFoodList();
+      }
+    }, [sessionId, transformFoodItem, setFoodList, checkSession])
+  );
 
   // 식품 리스트 뷰 생성
-  const FoodCard = React.memo(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
+  const FoodCard = React.memo(({ item, isLast, onPress }: { item: FoodItem, isLast?: boolean, onPress: (item: FoodItem) => void }) => {
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     
@@ -262,7 +364,7 @@ export default function MainScreen() {
     return (
       <TouchableOpacity 
         style={[styles.FoodListView, isLast && styles.FoodListLastView]}
-        onPress={() => { FoodInfo(item);  setFoodInfoModalVisible(true); }}
+        onPress={() => onPress(item)}
         activeOpacity={0.7}
       >
         <View style={styles.imageContainer}>
@@ -289,7 +391,7 @@ export default function MainScreen() {
         </View>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Text style={styles.FoodListViewTitle}>{item.name}</Text>
-          <Text style={styles.FoodListViewContent}>수량: {item.count}</Text>
+          <Text style={styles.FoodListViewContent}>유통기한 만료까지: {item.days_remaining}일</Text>
         </View>
       </TouchableOpacity>
     );
@@ -297,6 +399,7 @@ export default function MainScreen() {
   
   FoodCard.displayName = 'FoodCard';
 
+<<<<<<< HEAD
   const handleSettings = () => {
     router.push('/settings');
   };
@@ -305,14 +408,29 @@ export default function MainScreen() {
     router.push('/profile-edit');
   };
 
+=======
+>>>>>>> origin/szkotgh
   return (
     <View style={GlobalStyles.container}>
       {/* Header */}
+<<<<<<< HEAD
       <View style={GlobalStyles.header}>
         <Text style={GlobalStyles.headerTitle}>SmileFood</Text>
         <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
           <Text style={styles.settingsButtonText}>설정</Text>
         </TouchableOpacity>
+=======
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>SmileFood</Text>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.chatHistoryButton} onPress={() => router.push('/chat-list')}>
+            <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
+            <Text style={styles.settingsButtonText}>설정</Text>
+          </TouchableOpacity>
+        </View>
+>>>>>>> origin/szkotgh
       </View>
 
       {/* Profile Card */}
@@ -352,13 +470,20 @@ export default function MainScreen() {
             />
           }
         >
-          {memoizedFoodList.map((item, index) => 
-            renderFoodCard({ item, isLast: index === memoizedFoodList.length - 1 })
+          {memoizedFoodList.length > 0 ? (
+            memoizedFoodList.map((item, index) => 
+              renderFoodCard({ item, isLast: index === memoizedFoodList.length - 1 })
+            )
+          ) : (
+            <View style={styles.emptyStateContainer}>
+              <Text style={styles.emptyStateText}>등록된 식품 정보가 없습니다</Text>
+            </View>
           )}
         </ScrollView>
       </View>
 
       <MenuButtonAndModal />
+<<<<<<< HEAD
       
       {/* 식품 세부정보 확인 모달 */}
       <Modal
@@ -427,11 +552,113 @@ export default function MainScreen() {
         </View>
       </Modal>
     </View>
+=======
+    </SafeAreaView>
+>>>>>>> origin/szkotgh
   );
 }
 
 const styles = StyleSheet.create({
+<<<<<<< HEAD
   // 설정 버튼 (특화 스타일)
+=======
+  FoodListView: {
+    height: Dimensions.get('window').height / 10,
+    width: '100%',
+    flexDirection: 'row',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderBottomColor: '#f4f4f4',
+    borderBottomWidth: 1,
+  },
+  FoodListLastView: {
+    height: Dimensions.get('window').height / 10,
+    width: '100%',
+    flexDirection: 'row',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 0,
+  },
+  imageContainer: {
+    position: 'relative',
+    marginRight: 12,
+  },
+  FoodListViewImg: {
+    width: (Dimensions.get('window').height / 10)-20,
+    aspectRatio: 1,
+    borderRadius: 6,
+  },
+  placeholderImage: {
+    width: (Dimensions.get('window').height / 10)-20,
+    height: (Dimensions.get('window').height / 10)-20,
+    borderRadius: 6,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 20,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  loadingSpinner: {
+    width: 16,
+    height: 16,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    borderTopColor: 'transparent',
+    borderRadius: 8,
+  },
+  FoodListViewTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  FoodListViewContent: {
+    fontSize: 14,
+    color: '#666',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chatHistoryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+>>>>>>> origin/szkotgh
   settingsButton: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
@@ -461,6 +688,7 @@ const styles = StyleSheet.create({
 
   // 메인 식품 리스트 뷰 (특화 스타일)
   MainFoodListView: {
+<<<<<<< HEAD
     ...GlobalStyles.cardWithMargin,
     height: Dimensions.get('window').height / 2,
   },
@@ -542,4 +770,31 @@ const styles = StyleSheet.create({
   
   // 기본 뷰 (재사용 가능)
   DefalutView: GlobalStyles.card,
+=======
+    backgroundColor: '#fff',
+    height: Dimensions.get('window').height/1.6,
+    margin: 20,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  }
+>>>>>>> origin/szkotgh
 });
