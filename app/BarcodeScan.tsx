@@ -17,6 +17,7 @@ export default function BarcodeScanScreen() {
   const [scanCount, setScanCount] = useState(0); // 스캔 횟수 추적
   const [hasScanned, setHasScanned] = useState(false); // 스캔 완료 여부 추적
   const cameraRef = useRef<CameraView>(null);
+  const scanLockRef = useRef<boolean>(false); // 동기 중복 방지 락
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -42,6 +43,7 @@ export default function BarcodeScanScreen() {
     if (isProcessing) return;
     
     // 스캔 활성화 (이제 바코드가 인식되면 자동으로 처리됨)
+    scanLockRef.current = false; // 새 스캔 시작 시 락 해제
     setScanEnabled(true);
     Alert.alert(
       '바코드 스캔 활성화', 
@@ -52,11 +54,18 @@ export default function BarcodeScanScreen() {
 
   // 바코드 스캔 결과 처리 (자동 호출됨)
   async function onBarcodeScanned(scanningResult: any) {
+    // 동기 중복 호출 즉시 차단
+    if (scanLockRef.current) {
+      console.log('중복 스캔 차단 - scanLockRef');
+      return;
+    }
     // 이미 스캔했거나, 스캔이 비활성화되었거나, 처리 중이면 무시
     if (hasScanned || !scanEnabled || isProcessing || scanCount > 0) {
       console.log('스캔 무시됨 - hasScanned:', hasScanned, 'scanEnabled:', scanEnabled, 'isProcessing:', isProcessing, 'scanCount:', scanCount);
       return;
     }
+    // 첫 유효 호출에서 바로 락 설정
+    scanLockRef.current = true;
     
     const barcodeData = scanningResult.data;
     
@@ -93,25 +102,9 @@ export default function BarcodeScanScreen() {
           }
           // 메인 화면으로 돌아가기
           router.back();
-        }, 1500); // 1.5초 후 자동으로 돌아가기
+        }, 0); 
         
-        Alert.alert(
-          '식품 추가 완료', 
-          `${response.message}\n\n바코드: ${barcodeData}\n\n1.5초 후 자동으로 메인 화면으로 돌아갑니다.`,
-          [
-            {
-              text: '지금 돌아가기',
-              onPress: () => {
-                // 메인 화면의 식품 리스트 새로고침
-                if (refreshFoodList) {
-                  refreshFoodList();
-                }
-                // 메인 화면으로 돌아가기
-                router.back();
-              }
-            }
-          ]
-        );
+  
       } else {
         Alert.alert('오류', response.message, [
           {
@@ -120,6 +113,8 @@ export default function BarcodeScanScreen() {
               // 실패 시 스캔 비활성화 상태 유지 (사용자가 버튼을 다시 눌러야 함)
               setScanEnabled(false);
               setIsProcessing(false);
+              // 재시도를 위해 락 해제
+              scanLockRef.current = false;
             }
           }
         ]);
@@ -161,6 +156,8 @@ export default function BarcodeScanScreen() {
               onPress: () => {
                 setScanEnabled(false); // 스캔 비활성화 유지
                 setIsProcessing(false);
+                // 재시도를 위해 락 해제
+                scanLockRef.current = false;
               }
             },
             {
@@ -178,6 +175,8 @@ export default function BarcodeScanScreen() {
                         onPress: () => {
                           setScanEnabled(false); // 스캔 비활성화 유지
                           setIsProcessing(false);
+                          // 재시도를 위해 락 해제
+                          scanLockRef.current = false;
                         }
                       }
                     ]
@@ -186,6 +185,8 @@ export default function BarcodeScanScreen() {
                   console.error('수량 업데이트 오류:', updateError);
                   setScanEnabled(false); // 스캔 비활성화 유지
                   setIsProcessing(false);
+                  // 재시도를 위해 락 해제
+                  scanLockRef.current = false;
                 }
               }
             }
@@ -199,6 +200,8 @@ export default function BarcodeScanScreen() {
             onPress: () => {
               setScanEnabled(false); // 스캔 비활성화 유지
               setIsProcessing(false);
+              // 재시도를 위해 락 해제
+              scanLockRef.current = false;
             }
           }
         ]);
@@ -213,20 +216,16 @@ export default function BarcodeScanScreen() {
         style={ScreenStyles.camera} 
         facing={facing} 
         barcodeScannerSettings={
-          hasScanned || scanCount > 0 
+          hasScanned || scanCount > 0 || scanLockRef.current
             ? undefined // 스캔 완료 시 바코드 스캔 기능 완전 비활성화
             : {barcodeTypes: ['qr', 'code128', 'ean13', 'ean8']}
         }
-        onBarcodeScanned={hasScanned || scanCount > 0 ? undefined : onBarcodeScanned}
+        onBarcodeScanned={hasScanned || scanCount > 0 || scanLockRef.current ? undefined : onBarcodeScanned}
       />
       
       {/* 스캔 가이드라인 오버레이 */}
       <View style={ScreenStyles.scanOverlay}>
         <View style={ScreenStyles.scanArea}>
-          <View style={ScreenStyles.scanCorner} />
-          <View style={[ScreenStyles.scanCorner, styles.topRight]} />
-          <View style={[ScreenStyles.scanCorner, styles.bottomLeft]} />
-          <View style={[ScreenStyles.scanCorner, styles.bottomRight]} />
         </View>
         
         {/* 로딩 인디케이터 */}
@@ -237,14 +236,7 @@ export default function BarcodeScanScreen() {
         )}
         
         <Text style={ScreenStyles.instructionText}>
-          {hasScanned 
-            ? '스캔이 완료되었습니다\n메인 화면으로 돌아갑니다'
-            : isProcessing 
-            ? '식품 추가 중...'
-            : scanEnabled 
-            ? '바코드를 카메라 중앙에 맞춰주세요\n(한 번만 인식됩니다)'
-            : '스캔 시작 버튼을 눌러 바코드 인식을 시작하세요\n한 번 인식 후 자동으로 종료됩니다'
-          }
+          바코드를 카메라 중앙에 맞춰주세요.
         </Text>
         
         {scanCount > 0 && (
@@ -298,7 +290,7 @@ export default function BarcodeScanScreen() {
               ? '처리 중...' 
               : scanEnabled 
               ? '스캔 중...' 
-              : '🔍 스캔 시작'
+              : '스캔 시작'
             }
           </Text>
         </TouchableOpacity>
@@ -355,25 +347,25 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgb(100, 100, 100)',
     paddingVertical: 15,
     borderRadius: BorderRadius.xxl,
   },
   backButton: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: 'rgba(100, 100, 100, 0.8)',
+    backgroundColor: 'rgb(100, 100, 100)',
     paddingVertical: 15,
     borderRadius: BorderRadius.xxl,
   },
   captureButton: {
-    backgroundColor: 'rgba(0, 150, 0, 0.8)',
+    backgroundColor: '#007AFF',
   },
   scanningButton: {
-    backgroundColor: 'rgba(255, 100, 0, 0.8)',
+    backgroundColor: 'rgb(255, 100, 0)',
   },
   processingButton: {
-    backgroundColor: 'rgba(100, 100, 100, 0.8)',
+    backgroundColor: 'rgb(100, 100, 100)',
   },
   buttonText: {
     fontSize: FontSizes.lg,

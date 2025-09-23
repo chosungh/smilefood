@@ -7,29 +7,30 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Alert
 } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, setUserInfo, userInfo, clearNavigationStack, showAlert } = useAppContext();
+  const { userInfo, clearNavigationStack } = useAppContext();
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDeleteAccount = async () => {
     if (!password.trim()) {
-      showAlert('오류', '비밀번호를 입력해주세요.');
+      Alert.alert('오류', '비밀번호를 입력해주세요.');
       return;
     }
 
     if (!userInfo?.email) {
-      showAlert('오류', '사용자 정보를 찾을 수 없습니다.');
+      Alert.alert('오류', '사용자 정보를 찾을 수 없습니다.');
       return;
     }
 
-    showAlert(
+    Alert.alert(
       '회원탈퇴',
       '정말로 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
       [
@@ -48,7 +49,7 @@ export default function DeleteAccountScreen() {
               // 성공 시 로그아웃 처리
               clearNavigationStack();
               
-              showAlert(
+              Alert.alert(
                 '탈퇴 완료',
                 response.message,
                 [
@@ -68,9 +69,9 @@ export default function DeleteAccountScreen() {
               );
             } catch (error: any) {
               if (error.response?.data?.message) {
-                showAlert('오류', error.response.data.message);
+                Alert.alert('오류', error.response.data.message);
               } else {
-                showAlert('오류', '회원탈퇴 중 오류가 발생했습니다.');
+                Alert.alert('오류', '회원탈퇴 중 오류가 발생했습니다.');
               }
             } finally {
               setIsLoading(false);

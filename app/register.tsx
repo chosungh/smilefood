@@ -28,7 +28,7 @@ export default function RegisterScreen() {
   const [isTimerActive, setIsTimerActive] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
-  const { showAlert } = useAppContext();
+  const { } = useAppContext();
 
   useEffect(() => {
     if (isTimerActive && timer > 0) {
@@ -66,12 +66,12 @@ export default function RegisterScreen() {
       if (response.code === 200) {
         setShowVerificationInput(true);
         startTimer();
-        showAlert('성공', response.message);
+        Alert.alert('성공', response.message);
       } else {
         setError(response.message || '인증 코드 전송에 실패했습니다.');
       }
     } catch (error: any) {
-      setError(error.response.data.message || '인증 코드 전송 중 오류가 발생했습니다.');
+      setError(error.response?.data?.message || '인증 코드 전송 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -91,12 +91,12 @@ export default function RegisterScreen() {
       
       if (response.code === 200) {
         setIsEmailVerified(true);
-        showAlert('성공', response.message);
+        Alert.alert('성공', response.message);
       } else {
         setError(response.message || '인증 코드가 일치하지 않습니다.');
       }
     } catch (error: any) {
-      setError( error.response.data.message || '인증 코드 확인 중 오류가 발생했습니다.');
+      setError(error.response?.data?.message || '인증 코드 확인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +120,7 @@ export default function RegisterScreen() {
       const response = await authAPI.register(email, password, name);
       
       if (response.code === 200) {
-        showAlert('회원가입 완료', response.message, [
+        Alert.alert('회원가입 완료', response.message, [
           {
             text: '확인',
             onPress: () => router.replace('/login'),
@@ -130,7 +130,7 @@ export default function RegisterScreen() {
         setError(response.message || '회원가입에 실패했습니다.');
       }
     } catch (error: any) {
-      setError(error.response.data.message || '회원가입 중 오류가 발생했습니다.');
+      setError(error.response?.data?.message || '회원가입 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }

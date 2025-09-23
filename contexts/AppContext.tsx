@@ -32,7 +32,7 @@ interface AppContextType {
   setIsFirstLaunch: (value: boolean) => void;
   setUserInfo: (value: UserInfo | null) => void;
   setRefreshFoodList: (callback: (() => void) | null) => void;
-  clearNavigationStack: () => void;
+  clearNavigationStack: () => Promise<void>;
   setNavigationReset: (value: boolean) => void;
   
   // Alert 관련 상태
@@ -72,12 +72,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   // 네비게이션 스택을 정리하는 함수
-  const clearNavigationStack = useCallback(() => {
+  const clearNavigationStack = useCallback(async () => {
     // 로그아웃 시 모든 상태를 초기화
     setSessionId(null);
     setUserInfo(null);
     setIsLoggedIn(false);
     setNavigationReset(true);
+    
+    // AsyncStorage에서도 데이터 제거
+    try {
+      await AsyncStorage.removeItem('sessionId');
+      await AsyncStorage.removeItem('userInfo');
+    } catch (error) {
+      console.error('AsyncStorage 정리 중 오류:', error);
+    }
   }, []);
 
   // isNavigationReset 상태가 true일 때 자동으로 false로 리셋

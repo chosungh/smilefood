@@ -11,7 +11,9 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    DeviceEventEmitter,
+    Alert
 } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
 
@@ -21,6 +23,7 @@ type FoodItem = {
   created_at: string;
   description: string;
   days_remaining: number;
+  ingredients: string;
   expiration_date: string;
   expiration_date_desc: string;
   fid: string;
@@ -33,7 +36,7 @@ type FoodItem = {
 };
 
 export default function FoodDetailScreen() {
-  const { sessionId, showAlert } = useAppContext();
+  const { sessionId, refreshFoodList } = useAppContext();
   const router = useRouter();
   const { fid } = useLocalSearchParams<{ fid: string }>();
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
@@ -49,11 +52,11 @@ export default function FoodDetailScreen() {
           const foodInfo = response.data.food_info;
           setSelectedFood(foodInfo);
         } else {
-          showAlert('오류', '식품 정보를 불러오지 못했습니다.');
+          Alert.alert('오류', '식품 정보를 불러오지 못했습니다.');
         }
       }
     } catch (error: any) {
-      showAlert('오류', error.response?.data?.message || '식품 정보를 불러오지 못했습니다.');
+      Alert.alert('오류', error.response?.data?.message || '식품 정보를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -61,7 +64,7 @@ export default function FoodDetailScreen() {
 
   // 식품 삭제
   const DeleteFood = async (fid: string) => {
-    showAlert(
+    Alert.alert(
       '식품 삭제',
       '정말로 이 식품을 삭제하시겠습니까?',
       [
@@ -78,15 +81,26 @@ export default function FoodDetailScreen() {
                 const response = await foodAPI.deleteFood(sessionId, fid);
                 
                 if (response.code === 200) {
-                  showAlert('성공', '식품이 삭제되었습니다.');
+                  // 메인 화면에 즉시 반영하도록 이벤트 전송
+                  DeviceEventEmitter.emit('food:deleted', { fid });
+
+                  // 서버 데이터 동기화를 위해 새로고침 호출 (있을 경우)
+                  if (refreshFoodList) {
+                    await refreshFoodList();
+                  }
+
+                  // 상세 화면 닫기
                   router.back();
+
+                  // 안내 표시
+                  Alert.alert('삭제 완료', '식품이 삭제되었습니다.');
                 } else {
-                  showAlert('오류', '식품 삭제에 실패했습니다.');
+                  Alert.alert('오류', '식품 삭제에 실패했습니다.');
                 }
               }
             } catch (error) {
               console.error('Error deleting food:', error);
-              showAlert('오류', '식품 삭제 중 오류가 발생했습니다.');
+              Alert.alert('오류', '식품 삭제 중 오류가 발생했습니다.');
             }
           },
         },
@@ -170,6 +184,11 @@ export default function FoodDetailScreen() {
             <View style={styles.infoItem}>
               <Text style={styles.infoTitle}>수량</Text>
               <Text style={styles.infoText}>{selectedFood.count}</Text>
+            </View>
+
+            <View style={styles.infoItem}>
+              <Text style={styles.infoTitle}>원재료명</Text>
+              <Text style={styles.infoText}>{selectedFood.ingredients}</Text>
             </View>
             
             <View style={styles.infoItem}>

@@ -20,7 +20,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, setUserInfo, showAlert } = useAppContext();
+  const { setIsLoggedIn, setSessionId, setUserInfo } = useAppContext();
 
   // 로그인 화면에 도달했을 때 네비게이션 스택을 완전히 초기화
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      showAlert('오류', '이메일과 비밀번호를 모두 입력해주세요.');
+      Alert.alert('오류', '이메일과 비밀번호를 모두 입력해주세요.');
       return;
     }
 
@@ -54,10 +54,10 @@ export default function LoginScreen() {
         
         router.replace('/main');
       } else {
-        showAlert('로그인 실패', response.message || '로그인에 실패했습니다.');
+        Alert.alert('로그인 실패', response.message || '로그인에 실패했습니다.');
       }
     } catch (error: any) {
-      showAlert('오류', error.response?.data?.message || '로그인 중 오류가 발생했습니다.');
+      Alert.alert('오류', error.response?.data?.message || '로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -65,15 +65,15 @@ export default function LoginScreen() {
 
   const handleFindPassword = async () => {
     if (!email) {
-      showAlert('오류', '이메일을 입력해주세요.');
+      Alert.alert('오류', '이메일을 입력해주세요.');
       return;
     }
 
     try {
       const response = await authAPI.findPassword(email);
-      showAlert('알림', response.message || '비밀번호 재설정 링크가 이메일로 전송되었습니다.');
+      Alert.alert('알림', response.message || '비밀번호 재설정 링크가 이메일로 전송되었습니다.');
     } catch (error: any) {
-      showAlert('오류', error.response?.data?.message || '비밀번호 찾기 중 오류가 발생했습니다.');
+      Alert.alert('오류', error.response?.data?.message || '비밀번호 찾기 중 오류가 발생했습니다.');
     }
   };
 

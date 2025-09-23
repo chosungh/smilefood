@@ -16,10 +16,10 @@ const statusbarHeight = getStatusBarHeight();
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, sessionId, setUserInfo, clearNavigationStack, showAlert } = useAppContext();
+  const { sessionId, clearNavigationStack } = useAppContext();
 
   const handleLogout = async () => {
-    showAlert(
+    Alert.alert(
       '로그아웃',
       '로그아웃하시겠습니까?',
       [
@@ -33,23 +33,24 @@ export default function SettingsScreen() {
           onPress: async () => {
             try {
               if (sessionId) {
-                const response = await authAPI.logout(sessionId);
-                showAlert('로그아웃 성공', response.message);
+                await authAPI.logout(sessionId);
               }
-              
-              // AppContext의 clearNavigationStack 함수 사용
               clearNavigationStack();
-              
-              // 네비게이션 스택을 완전히 정리하고 로그인 화면으로 이동
-              router.replace('/login');
-              
-              // 추가로 네비게이션 스택을 정리
-              setTimeout(() => {
-                router.replace('/login');
-              }, 100);
+              Alert.alert('로그아웃 완료', '로그아웃되었습니다.', [
+                {
+                  text: '확인',
+                  onPress: () => {
+                    router.replace('/login');
+                    setTimeout(() => {
+                      router.replace('/login');
+                    }, 100);
+                  },
+                },
+              ]);
             } catch (error: any) {
               console.error('Logout error:', error);
-              showAlert('오류', error.response?.data?.message || '로그아웃 중 오류가 발생했습니다.');
+              const errorMessage = error.response?.data?.message || '로그아웃 중 오류가 발생했습니다.';
+              Alert.alert('오류', errorMessage);
             }
           },
         },
@@ -79,7 +80,7 @@ export default function SettingsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          <Ionicons name="arrow-back" size={24} color="#  " />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>설정</Text>
         <View style={styles.placeholder} />

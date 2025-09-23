@@ -9,13 +9,14 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    Alert
 } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
 import { ChatInfo, foodAPI, FoodItem } from '../services/api';
 
 export default function ChatDetailScreen() {
-  const { sessionId, showAlert } = useAppContext();
+  const { sessionId } = useAppContext();
   const router = useRouter();
   const { fcid } = useLocalSearchParams<{ fcid: string }>();
   
@@ -26,7 +27,7 @@ export default function ChatDetailScreen() {
 
   useEffect(() => {
     if (!sessionId || !fcid) {
-      showAlert('오류', '필수 정보가 누락되었습니다.');
+      Alert.alert('오류', '필수 정보가 누락되었습니다.');
       router.back();
       return;
     }
