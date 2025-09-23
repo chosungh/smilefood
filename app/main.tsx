@@ -21,6 +21,7 @@ import { preloadImages } from '../utils/imageCache';
 import MenuButtonAndModal from './menuButtonAndModal';
 import { getStatusBarHeight } from 'react-native-status-bar-height';
 import BarcodeScan from './BarcodeScan';
+import { GlobalStyles, Colors, Spacing, FontSizes, BorderRadius, ScreenStyles } from '../styles/GlobalStyles';
 
 type FoodItem = {
   barcode: string;
@@ -175,19 +176,49 @@ export default function MainScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              if (sessionId && fid) {
-                const response = await foodAPI.deleteFood(sessionId, fid);
-                if (response.code === 200) {
-                  Alert.alert('삭제 완료', response.message);
-                  onRefresh(); // 삭제 후 리스트 갱신
-                  setFoodInfoModalVisible(false);
-                } else {
-                  Alert.alert('오류', '식품 삭제에 실패했습니다.');
-                }
+              if (!sessionId) {
+                Alert.alert('오류', '세션이 만료되었습니다. 다시 로그인하세요.');
+                return;
               }
-            } catch (error) {
+              
+              if (!fid) {
+                Alert.alert('오류', '식품 정보가 올바르지 않습니다.');
+                return;
+              }
+              
+              const response = await foodAPI.deleteFood(sessionId, fid);
+              console.log('Delete response:', response); // 디버깅용 로그
+              
+              if (response && response.code === 200) {
+                Alert.alert('삭제 완료', response.message || '식품이 성공적으로 삭제되었습니다.');
+                await onRefresh(); // 삭제 후 리스트 갱신
+                setFoodInfoModalVisible(false);
+              } else {
+                console.error('Delete failed with response:', response);
+                Alert.alert('오류', response?.message || '식품 삭제에 실패했습니다.');
+              }
+            } catch (error: any) {
               console.error('Error deleting food:', error);
-              Alert.alert('오류', '식품 삭제 중 오류가 발생했습니다.');
+              console.error('Error response:', error.response);
+              
+              // 더 구체적인 에러 메시지 제공
+              let errorMessage = '식품 삭제 중 오류가 발생했습니다.';
+              
+              if (error.response) {
+                // 서버 응답이 있는 경우
+                if (error.response.status === 401) {
+                  errorMessage = '인증이 만료되었습니다. 다시 로그인하세요.';
+                } else if (error.response.status === 404) {
+                  errorMessage = '삭제하려는 식품을 찾을 수 없습니다.';
+                } else if (error.response.data?.message) {
+                  errorMessage = error.response.data.message;
+                }
+              } else if (error.message) {
+                // 네트워크 오류 등
+                errorMessage = `네트워크 오류: ${error.message}`;
+              }
+              
+              Alert.alert('오류', errorMessage);
             }
           },
         },
@@ -275,29 +306,29 @@ export default function MainScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={GlobalStyles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>SmileFood</Text>
+      <View style={GlobalStyles.header}>
+        <Text style={GlobalStyles.headerTitle}>SmileFood</Text>
         <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
           <Text style={styles.settingsButtonText}>설정</Text>
         </TouchableOpacity>
       </View>
 
       {/* Profile Card */}
-      <TouchableOpacity style={styles.profileCard} onPress={handleProfileEdit}>
-        <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
+      <TouchableOpacity style={GlobalStyles.cardWithMargin} onPress={handleProfileEdit}>
+        <View style={GlobalStyles.rowBetween}>
+          <View style={GlobalStyles.avatar}>
             {userInfo?.profile_url ? (
               <Image 
                 source={{ uri: userInfo.profile_url }} 
-                style={styles.avatarImage}
+                style={GlobalStyles.avatarImage}
                 contentFit="cover"
                 transition={200}
                 cachePolicy="memory-disk"
               />
             ) : (
-              <Text style={styles.avatarText}>
+              <Text style={GlobalStyles.avatarText}>
                 {userInfo?.name?.charAt(0) || 'A'}
               </Text>
             )}
@@ -316,8 +347,8 @@ export default function MainScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#007AFF']}
-              tintColor="#007AFF"
+              colors={[Colors.primary]}
+              tintColor={Colors.primary}
             />
           }
         >
@@ -400,269 +431,115 @@ export default function MainScreen() {
 }
 
 const styles = StyleSheet.create({
-  DefalutView: {
-    backgroundColor: '#fff',
-    width: '100%',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  FoodListView: {
-    height: Dimensions.get('window').height / 10,
-    width: '100%',
-    flexDirection: 'row',
-    padding: 10,
-    backgroundColor: '#fff',
-    borderBottomColor: '#f4f4f4',
-    borderBottomWidth: 1,
-  },
-  FoodListLastView: {
-    height: Dimensions.get('window').height / 10,
-    width: '100%',
-    flexDirection: 'row',
-    padding: 10,
-    backgroundColor: '#fff',
-    borderBottomWidth: 0,
-  },
-  imageContainer: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  FoodListViewImg: {
-    width: (Dimensions.get('window').height / 10)-20,
-    aspectRatio: 1,
-    borderRadius: 6,
-  },
-  placeholderImage: {
-    width: (Dimensions.get('window').height / 10)-20,
-    height: (Dimensions.get('window').height / 10)-20,
-    borderRadius: 6,
-    backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 20,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 6,
-  },
-  loadingSpinner: {
-    width: 16,
-    height: 16,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    borderTopColor: 'transparent',
-    borderRadius: 8,
-  },
-  FoodListViewTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  FoodListViewContent: {
-    fontSize: 14,
-    color: '#666',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: statusbarHeight,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
+  // 설정 버튼 (특화 스타일)
   settingsButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: Colors.background,
   },
   settingsButtonText: {
-    color: '#666',
-    fontSize: 14,
+    color: Colors.text.secondary,
+    fontSize: FontSizes.sm,
     fontWeight: '600',
   },
-  profileCard: {
-    backgroundColor: '#fff',
-    margin: 20,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 30,
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
+
+  // 프로필 정보 (특화 스타일)
   profileInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 20,
+    fontSize: FontSizes.xl,
     fontWeight: 'bold',
-    color: '#333',
+    color: Colors.text.primary,
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: FontSizes.sm,
+    color: Colors.text.secondary,
   },
+
+  // 메인 식품 리스트 뷰 (특화 스타일)
   MainFoodListView: {
-    backgroundColor: '#fff',
-    height: Dimensions.get('window').height/2,
-    margin: 20,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...GlobalStyles.cardWithMargin,
+    height: Dimensions.get('window').height / 2,
   },
-  ModalBackgroundShade: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    paddingTop: 100,
-    paddingBottom: 80,
-    paddingLeft: 40,
-    paddingRight: 40
+
+  // 식품 리스트 아이템들 - 글로벌 스타일 사용
+  FoodListView: ScreenStyles.foodListView,
+  FoodListLastView: {
+    ...ScreenStyles.foodListView,
+    borderBottomWidth: 0,
   },
-  ModalBackground: {
-    flex: 1,
-    alignItems: 'stretch',
-    justifyContent: 'center',
-    borderRadius: 16,
-    width: '100%',
-    height: '100%',
-    paddingTop: 20,
-    paddingBottom: 20,
-    paddingLeft: 10,
-    paddingRight: 10,
-    backgroundColor: 'white',
-    shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 3.84,
-        elevation: 5,
-        maxHeight: '80%',
+  imageContainer: {
+    position: 'relative',
+    marginRight: Spacing.md,
   },
+  FoodListViewImg: ScreenStyles.foodListImage,
+  placeholderImage: {
+    ...GlobalStyles.placeholderImage,
+    width: (Dimensions.get('window').height / 10) - 20,
+    height: (Dimensions.get('window').height / 10) - 20,
+  },
+  placeholderText: {
+    fontSize: FontSizes.xl,
+  },
+  loadingOverlay: GlobalStyles.loadingOverlay,
+  loadingSpinner: {
+    width: 16,
+    height: 16,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    borderTopColor: 'transparent',
+    borderRadius: 8,
+  },
+  FoodListViewTitle: ScreenStyles.foodListTitle,
+  FoodListViewContent: ScreenStyles.foodListContent,
+
+  // 모달 스타일들 - 글로벌 스타일 사용
+  ModalBackgroundShade: GlobalStyles.modalBackground,
+  ModalBackground: GlobalStyles.modalContainer,
   ModalArrowBack: {
     position: 'absolute',
     top: 0,
     left: 0,
     width: '100%',
-    padding: 20,
+    padding: Spacing.xl,
     zIndex: 20,
-    borderRadius: 16
+    borderRadius: BorderRadius.xl,
   },
   FoodInfoModalImage: {
     width: '100%',
     aspectRatio: 1,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderRadius: BorderRadius.lg,
+    ...GlobalStyles.shadow,
   },
   FoodInfoModalInfo: {
     borderBottomWidth: 1,
-    borderBottomColor: '#f4f4f4',
-    paddingLeft: 20,
+    borderBottomColor: Colors.border.light,
+    paddingLeft: Spacing.xl,
     paddingTop: 10,
     paddingBottom: 10,
     gap: 6,
   },
   FoodInfoModalInfoTitle: {
-    fontSize: 16,
+    fontSize: FontSizes.md,
     fontWeight: 'bold',
   },
   FoodInfoModalText: {
-    fontSize: 12,
-    color: '#666'
+    fontSize: FontSizes.xs,
+    color: Colors.text.secondary,
   },
   FoodInfoDeleteButton: {
-    backgroundColor: '#fff',
+    ...GlobalStyles.card,
     width: '100%',
     marginBottom: 10,
-    borderRadius: 12,
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 20,
-    paddingRight: 20,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  }
+  },
+  
+  // 기본 뷰 (재사용 가능)
+  DefalutView: GlobalStyles.card,
 });

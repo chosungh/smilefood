@@ -11,12 +11,13 @@ import {
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { GlobalStyles, Colors, Spacing, FontSizes, BorderRadius, ScreenStyles } from '../styles/GlobalStyles';
 
 const { width, height } = Dimensions.get('window');
 
 const onboardingData = [
   {
-    title: '스마일푸드에 오신 것을 환영합니다',
+    title: '스마일푸드에 \n 오신 것을 환영합니다',
     description: '제품을 촬영하고 관리해보세요.',
     image: require('../assets/images/icon.png'),
   },
@@ -59,8 +60,8 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView style={GlobalStyles.containerWhite}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <ScrollView
         ref={scrollViewRef}
         horizontal
@@ -70,13 +71,15 @@ export default function OnboardingScreen() {
         scrollEventThrottle={16}
       >
         {onboardingData.map((item, index) => (
-          <View key={index} style={styles.slide}>
-            <View style={styles.imageContainer}>
-              <Image source={item.image} style={styles.image} />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.description}>{item.description}</Text>
+          <View key={index} style={ScreenStyles.onboardingSlide}>
+            <View style={ScreenStyles.onboardingContent}>
+              <View style={styles.imageContainer}>
+                <Image source={item.image} style={ScreenStyles.onboardingImage} />
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={GlobalStyles.title}>{item.title}</Text>
+                <Text style={GlobalStyles.description}>{item.description}</Text>
+              </View>
             </View>
           </View>
         ))}
@@ -88,8 +91,8 @@ export default function OnboardingScreen() {
           <View
             key={index}
             style={[
-              styles.indicator,
-              index === currentIndex && styles.activeIndicator,
+              GlobalStyles.indicator,
+              index === currentIndex && GlobalStyles.activeIndicator,
             ]}
           />
         ))}
@@ -98,12 +101,12 @@ export default function OnboardingScreen() {
       {/* 버튼 */}
       <View style={styles.buttonContainer}>
         {currentIndex < onboardingData.length - 1 ? (
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-            <Text style={styles.nextButtonText}>다음</Text>
+          <TouchableOpacity style={GlobalStyles.primaryButton} onPress={handleNext}>
+            <Text style={GlobalStyles.primaryButtonText}>다음</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.finishButton} onPress={handleFinish}>
-            <Text style={styles.finishButtonText}>시작하기</Text>
+          <TouchableOpacity style={GlobalStyles.primaryButton} onPress={handleFinish}>
+            <Text style={GlobalStyles.primaryButtonText}>시작하기</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -112,92 +115,30 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  slide: {
-    width,
-    height,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // 온보딩 특화 스타일만 유지
   imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-  },
-  image: {
-    width: width * 0.7,
-    height: width * 0.7,
-    resizeMode: 'contain',
+    justifyContent: 'center',
+    marginBottom: Spacing.xl,
   },
   textContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 16,
-    color: '#333',
-  },
-  description: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    color: '#666',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+    maxWidth: width - 40,
   },
   indicatorContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...GlobalStyles.indicatorContainer,
     position: 'absolute',
     bottom: 120,
     left: 0,
     right: 0,
-  },
-  indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ddd',
-    marginHorizontal: 4,
-  },
-  activeIndicator: {
-    backgroundColor: '#007AFF',
-    width: 24,
   },
   buttonContainer: {
     position: 'absolute',
     bottom: 50,
     left: 0,
     right: 0,
-    paddingHorizontal: 40,
-  },
-  nextButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  nextButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  finishButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  finishButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    paddingHorizontal: Spacing.xxxxl,
   },
 });

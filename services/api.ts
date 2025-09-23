@@ -39,6 +39,8 @@ api.interceptors.response.use(
       await AsyncStorage.removeItem('sessionId');
       // 로그인 화면으로 리다이렉트 로직 추가 필요
     }
+    // 404 에러는 리소스가 존재하지 않는 것이므로 그대로 전달
+    // 다른 에러들도 그대로 전달하여 각 API 호출에서 적절히 처리하도록 함
     return Promise.reject(error);
   }
 );
@@ -166,6 +168,39 @@ export interface FoodItem {
   type: string;
   uid: string;
   volume: string;
+  is_active: number; // 활성화 상태 (1: 활성화, 0: 비활성화)
+}
+
+// 채팅 관련 타입 정의
+export interface ChatInfo {
+  created_at: string;
+  fcid: string;
+  response: string | null;
+  status: 'created' | 'queued' | 'creating' | 'completed' | 'failed';
+  uid: string;
+  updated_at: string;
+  usage_input_token: number;
+  usage_output_token: number;
+}
+
+export interface ChatResponse {
+  code: number;
+  data: {
+    chat_info: ChatInfo;
+    food_ids: string[];
+  };
+  message: string;
+}
+
+export interface ChatListResponse {
+  code: number;
+  data: {
+    chat_list: {
+      chat_info: ChatInfo;
+      food_ids: string[];
+    }[];
+  };
+  message: string;
 }
 
 export interface FoodListResponse {
@@ -181,12 +216,11 @@ export const foodAPI = {
   // 음식 목록 조회
   getFoodList: async (sid: string): Promise<FoodListResponse> => {
     const response = await api.get(`/food/list?sid=${sid}`);
-    console.log(response.data);
     return response.data;
   },
 
-  // AI 음식 추천
-  FoodChat: async (sid: string, fidList: string[]) => {
+  // AI 음식 추천 요청 (POST)
+  requestFoodChat: async (sid: string, fidList: string[]): Promise<ChatResponse> => {
     const formData = new FormData();
     formData.append('sid', sid);
     
@@ -203,6 +237,18 @@ export const foodAPI = {
     return response.data;
   },
 
+  // AI 음식 추천 상태 확인 (GET)
+  getFoodChatStatus: async (sid: string, fcid: string): Promise<ChatResponse> => {
+    const response = await api.get(`/food/chat?sid=${sid}&fcid=${fcid}`);
+    return response.data;
+  },
+
+  // 채팅 내역 조회
+  getChatList: async (sid: string): Promise<ChatListResponse> => {
+    const response = await api.get(`/food/chat/list?sid=${sid}`);
+    return response.data;
+  },
+
   // 음식 등록
   regiFood: async (sid: string, barcode: string, count: string) => {
     const formData = createFormData({ sid, barcode, count });
@@ -212,19 +258,26 @@ export const foodAPI = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    console.log(response.data);
     return response.data;
   },
 
   // 음식 삭제
   deleteFood: async (sid: string, fid: string) => {
+    if (!sid || !fid) {
+      throw new Error('세션 ID와 식품 ID가 필요합니다.');
+    }
+    
     const formData = createFormData({ sid, fid });
+    console.log('Deleting food with sid:', sid, 'fid:', fid); // 디버깅용 로그
+    
     const response = await api.delete('/food', {
       data: formData,
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    
+    console.log('Delete API response:', response.data); // 디버깅용 로그
     return response.data;
   },
 
