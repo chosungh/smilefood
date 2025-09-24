@@ -198,8 +198,9 @@ export default function MainScreen() {
           const isSessionValid = await checkSession();
           if (!isSessionValid) return;
           
-          // 유저 정보 가져오기
-          const userResponse = await authAPI.getUserInfo(sessionId);
+          // 유저 정보 가져오기 (세션 정보를 통해 uid 추출)
+          const sessionResponse = await authAPI.getSessionInfo(sessionId);
+          const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
           setUserInfo(userResponse.data.user_info);
           console.log('Initial user info loaded');
 
