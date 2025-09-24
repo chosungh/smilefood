@@ -2,16 +2,14 @@ import { authAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
-import { getStatusBarHeight } from 'react-native-status-bar-height';
-
-const statusbarHeight = getStatusBarHeight();
 
 
 export default function SettingsScreen() {
@@ -76,17 +74,15 @@ export default function SettingsScreen() {
   
 
   return (
-    <View style={styles.container} >
+    <SafeAreaWrapper backgroundColor="#f8f9fa">
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#  " />
+          <Ionicons name="arrow-back" size={24} color="#007AFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>설정</Text>
         <View style={styles.placeholder} />
       </View>
-
-      
 
       {/* Settings Content */}
       <View style={styles.content}>
@@ -127,7 +123,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </SafeAreaWrapper>
   );
 }
 
@@ -140,7 +136,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: statusbarHeight,
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: '#fff',

@@ -4,14 +4,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    SafeAreaView,
+    Alert,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-    Alert
+    View
 } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 import { ChatInfo, foodAPI, FoodItem } from '../services/api';
 
@@ -101,29 +101,29 @@ export default function ChatDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaWrapper backgroundColor="#f5f5f5">
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
           <Text style={styles.loadingText}>
             {chatInfo ? getStatusText(chatInfo.status) : '레시피를 생성하고 있습니다...'}
           </Text>
         </View>
-      </SafeAreaView>
+      </SafeAreaWrapper>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaWrapper backgroundColor="#f5f5f5">
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
-      </SafeAreaView>
+      </SafeAreaWrapper>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper backgroundColor="#f5f5f5">
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#007AFF" />
@@ -196,7 +196,7 @@ export default function ChatDetailScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 

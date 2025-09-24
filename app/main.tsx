@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Dimensions,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -14,6 +13,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 import { preloadImages } from '../utils/imageCache';
 import MenuButtonAndModal from './menuButtonAndModal';
@@ -75,7 +75,7 @@ export default function MainScreen() {
       
       return true;
     } catch (error: any) {
-      console.error('Session check error:', error?.response || error);
+      console.warn('Session check error:', error?.response || error);
       return false;
     }
   }, [sessionId, showAlert, setSessionId, setUserInfo, setIsLoggedIn, router]);
@@ -101,7 +101,7 @@ export default function MainScreen() {
       setUserInfo(userResponse.data.user_info);
       console.log('User info refreshed successfully');
     } catch (error: any) {
-      console.error('User info refresh error:', error?.response || error);
+      console.warn('User info refresh error:', error?.response || error);
     }
   }, [sessionId, showAlert, setSessionId, setUserInfo, setIsLoggedIn, router]);
 
@@ -167,7 +167,7 @@ export default function MainScreen() {
                 }
               }
             } catch (error) {
-              // console.error('Error deleting food:', error);
+              // console.warn('Error deleting food:', error);
               showAlert('오류', '식품 삭제 중 오류가 발생했습니다.');
             }
           },
@@ -219,14 +219,14 @@ export default function MainScreen() {
                 preloadImages(imageUrls);
             }
           } catch (error: any) {
-            console.error('Food list load error:', error?.response || error);
+            console.warn('Food list load error:', error?.response || error);
             // Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
           }
           
           initialLoadDone.current = true;
           console.log('Initial load completed');
         } catch (error: any) {
-          console.error('Initial load error:', error?.response || error);
+          console.warn('Initial load error:', error?.response || error);
         }
       };
 
@@ -281,7 +281,7 @@ export default function MainScreen() {
               setFoodList(transformedFoodList);
             }
           } catch (error) {
-            console.error('Error refreshing food list:', error);
+            console.warn('Error refreshing food list:', error);
           }
         };
         
@@ -344,7 +344,7 @@ export default function MainScreen() {
   FoodCard.displayName = 'FoodCard';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper backgroundColor="#f8f9fa">
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       {/* Header */}
       <View style={styles.header}>
@@ -409,7 +409,7 @@ export default function MainScreen() {
       </View>
 
       <MenuButtonAndModal />
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 

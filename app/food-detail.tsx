@@ -4,17 +4,17 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+    Alert,
+    DeviceEventEmitter,
     Dimensions,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-    DeviceEventEmitter,
-    Alert
+    View
 } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 
 type FoodItem = {
@@ -116,28 +116,28 @@ export default function FoodDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaWrapper backgroundColor="#f8f9fa">
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
         <View style={styles.loadingContainer}>
           <Text>불러오는 중...</Text>
         </View>
-      </SafeAreaView>
+      </SafeAreaWrapper>
     );
   }
 
   if (!selectedFood) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaWrapper backgroundColor="#f8f9fa">
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
         <View style={styles.errorContainer}>
           <Text>식품 정보를 찾을 수 없습니다.</Text>
         </View>
-      </SafeAreaView>
+      </SafeAreaWrapper>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper backgroundColor="#f8f9fa">
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       
       {/* Header */}
@@ -215,7 +215,7 @@ export default function FoodDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 

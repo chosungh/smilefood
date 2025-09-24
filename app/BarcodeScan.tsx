@@ -1,10 +1,11 @@
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
-import { useState, useRef } from 'react';
-import { Alert, Button, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { foodAPI } from '@/services/api';
+import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
+import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
-import { GlobalStyles, Colors, Spacing, FontSizes, BorderRadius, ScreenStyles } from '../styles/GlobalStyles';
+import { BorderRadius, Colors, FontSizes, GlobalStyles, ScreenStyles, Spacing } from '../styles/GlobalStyles';
 
 export default function BarcodeScanScreen() {
   const router = useRouter();
@@ -27,10 +28,12 @@ export default function BarcodeScanScreen() {
   if (!permission.granted) {
     // Camera permissions are not granted yet.
     return (
-      <View style={GlobalStyles.centerContent}>
-        <Text style={styles.message}>We need your permission to show the camera</Text>
-        <Button onPress={requestPermission} title="grant permission" />
-      </View>
+      <SafeAreaWrapper backgroundColor="#000">
+        <View style={GlobalStyles.centerContent}>
+          <Text style={styles.message}>We need your permission to show the camera</Text>
+          <Button onPress={requestPermission} title="grant permission" />
+        </View>
+      </SafeAreaWrapper>
     );
   }
 
@@ -210,18 +213,19 @@ export default function BarcodeScanScreen() {
   }
 
   return (
-    <View style={ScreenStyles.cameraContainer}>
-      <CameraView 
-        ref={cameraRef}
-        style={ScreenStyles.camera} 
-        facing={facing} 
-        barcodeScannerSettings={
-          hasScanned || scanCount > 0 || scanLockRef.current
-            ? undefined // 스캔 완료 시 바코드 스캔 기능 완전 비활성화
-            : {barcodeTypes: ['qr', 'code128', 'ean13', 'ean8']}
-        }
-        onBarcodeScanned={hasScanned || scanCount > 0 || scanLockRef.current ? undefined : onBarcodeScanned}
-      />
+    <SafeAreaWrapper backgroundColor="#000">
+      <View style={ScreenStyles.cameraContainer}>
+        <CameraView 
+          ref={cameraRef}
+          style={ScreenStyles.camera} 
+          facing={facing} 
+          barcodeScannerSettings={
+            hasScanned || scanCount > 0 || scanLockRef.current
+              ? undefined // 스캔 완료 시 바코드 스캔 기능 완전 비활성화
+              : {barcodeTypes: ['qr', 'code128', 'ean13', 'ean8']}
+          }
+          onBarcodeScanned={hasScanned || scanCount > 0 || scanLockRef.current ? undefined : onBarcodeScanned}
+        />
       
       {/* 스캔 가이드라인 오버레이 */}
       <View style={ScreenStyles.scanOverlay}>
@@ -295,7 +299,8 @@ export default function BarcodeScanScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+      </View>
+    </SafeAreaWrapper>
   );
 }
 

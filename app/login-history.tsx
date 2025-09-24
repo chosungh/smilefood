@@ -2,17 +2,15 @@ import { authAPI } from '@/services/api';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    FlatList,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
-import { getStatusBarHeight } from 'react-native-status-bar-height';
-
-const statusbarHeight = getStatusBarHeight();
 
 interface SessionInfo {
   created_at: string;
@@ -125,7 +123,7 @@ export default function LoginHistoryScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaWrapper backgroundColor="#f8f9fa">
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={styles.backButton}>←</Text>
@@ -138,12 +136,12 @@ export default function LoginHistoryScreen() {
           <ActivityIndicator size="large" color="#007AFF" />
           <Text style={styles.loadingText}>로그인 기록을 불러오는 중...</Text>
         </View>
-      </View>
+      </SafeAreaWrapper>
     );
   }
 
   return (
-    <View style={{flex: 1, backgroundColor: '#f8f9fa'}}>
+    <SafeAreaWrapper backgroundColor="#f8f9fa">
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -176,7 +174,7 @@ export default function LoginHistoryScreen() {
           />
         )}
       </View>
-    </View>
+    </SafeAreaWrapper>
   );
 }
 
@@ -189,7 +187,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: statusbarHeight,
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: '#fff',

@@ -1,22 +1,17 @@
-import { authAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
-import { getStatusBarHeight } from 'react-native-status-bar-height';
-
-const statusbarHeight = getStatusBarHeight();
 
 export default function ProfileEditScreen() {
   const router = useRouter();
@@ -25,7 +20,7 @@ export default function ProfileEditScreen() {
   const [name, setName] = useState(userInfo?.name || '');
 
   return (
-    <View style={styles.container}>
+    <SafeAreaWrapper backgroundColor="#f8f9fa">
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -93,7 +88,7 @@ export default function ProfileEditScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaWrapper>
   );
 }
 
@@ -106,7 +101,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: statusbarHeight,
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: '#fff',
