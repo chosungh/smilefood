@@ -150,7 +150,7 @@ export default function FoodDetailScreen() {
       </View>
 
       {/* 식품 상세정보 */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
         <View style={styles.imageContainer}>
           {selectedFood.image_url ? (
             <Image 
@@ -249,6 +249,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  contentContainer: {
+    paddingBottom: 40,
   },
   imageContainer: {
     alignItems: 'center',

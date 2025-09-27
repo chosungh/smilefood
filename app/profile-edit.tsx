@@ -146,7 +146,6 @@ const styles = StyleSheet.create({
   profileSection: {
     alignItems: 'center',
     paddingVertical: 30,
-    backgroundColor: '#fff',
     marginBottom: 20,
   },
   avatarContainer: {

@@ -64,7 +64,6 @@ export default function MainScreen() {
       const sessionResponse = await authAPI.getSessionInfo(sessionId);
       
       if (sessionResponse.data.session_info.is_active === 0) {
-        console.log('Session expired, redirecting to login');
         showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
         setSessionId(null);
         setUserInfo(null);
@@ -88,7 +87,6 @@ export default function MainScreen() {
       const sessionResponse = await authAPI.getSessionInfo(sessionId);
       
       if (sessionResponse.data.session_info.is_active === 0) {
-        console.log('Session expired during user info refresh, redirecting to login');
         showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
         setSessionId(null);
         setUserInfo(null);
@@ -99,7 +97,6 @@ export default function MainScreen() {
       
       const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
       setUserInfo(userResponse.data.user_info);
-      console.log('User info refreshed successfully');
     } catch (error: any) {
       console.warn('User info refresh error:', error?.response || error);
     }
@@ -191,7 +188,6 @@ export default function MainScreen() {
   // 초기 로드 - sessionId가 변경될 때만 실행
   useEffect(() => {
     if (sessionId && !initialLoadDone.current) {
-      console.log('Starting initial load...');
       const loadInitialData = async () => {
         try {
           // 세션 체크
@@ -202,7 +198,6 @@ export default function MainScreen() {
           const sessionResponse = await authAPI.getSessionInfo(sessionId);
           const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
           setUserInfo(userResponse.data.user_info);
-          console.log('Initial user info loaded');
 
           // 식품 리스트 가져오기 (초기 로드 시에만)
           try {
@@ -212,7 +207,6 @@ export default function MainScreen() {
               const activeFoodList = foodResponse.data.food_list.filter((food: any) => food.is_active === 1);
               const transformedFoodList = activeFoodList.map(transformFoodItem);
               setFoodList(transformedFoodList);
-              console.log('Initial food list loaded:', transformedFoodList.length, 'items');
               // 이미지 프리로딩 (활성화된 아이템만)
               const imageUrls = activeFoodList
                 .map(food => food.image_url)
@@ -225,7 +219,6 @@ export default function MainScreen() {
           }
           
           initialLoadDone.current = true;
-          console.log('Initial load completed');
         } catch (error: any) {
           console.warn('Initial load error:', error?.response || error);
         }
@@ -239,11 +232,7 @@ export default function MainScreen() {
   useEffect(() => {
     if (!sessionId || !initialLoadDone.current) return;
 
-    console.log('Starting 5-second interval for session check and user info refresh');
-
     const interval = setInterval(async () => {
-      console.log('Checking session and refreshing user info...');
-      
       // 세션 체크
       const isSessionValid = await checkSession();
       if (!isSessionValid) return;
@@ -253,7 +242,6 @@ export default function MainScreen() {
     }, 5000);
 
     return () => {
-      console.log('Clearing 5-second interval');
       clearInterval(interval);
     };
   }, [sessionId, checkSession, refreshUserInfo]);
@@ -361,7 +349,7 @@ export default function MainScreen() {
       </View>
 
       {/* Profile Card */}
-      <View style={styles.profileCard}>
+      <TouchableOpacity style={styles.profileCard} onPress={() => router.push('/profile-edit')}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             {userInfo?.profile_url ? (
@@ -383,7 +371,7 @@ export default function MainScreen() {
             <Text style={styles.userEmail}>{userInfo?.email || 'user@example.com'}</Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* 식품 리스트 뷰 */}
       <View style={styles.MainFoodListView}>
@@ -525,6 +513,7 @@ const styles = StyleSheet.create({
   profileCard: {
     backgroundColor: '#fff',
     margin: 20,
+    marginBottom: 0,
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
@@ -574,7 +563,7 @@ const styles = StyleSheet.create({
   },
   MainFoodListView: {
     backgroundColor: '#fff',
-    height: Dimensions.get('window').height/1.6,
+    height: Dimensions.get('window').height/1.5,
     margin: 20,
     borderRadius: 16,
     padding: 20,

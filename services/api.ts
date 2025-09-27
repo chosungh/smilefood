@@ -268,7 +268,6 @@ export const foodAPI = {
     }
     
     const formData = createFormData({ sid, fid });
-    console.log('Deleting food with sid:', sid, 'fid:', fid); // 디버깅용 로그
     
     const response = await api.delete('/food', {
       data: formData,
@@ -277,7 +276,6 @@ export const foodAPI = {
       },
     });
     
-    console.log('Delete API response:', response.data); // 디버깅용 로그
     return response.data;
   },
 

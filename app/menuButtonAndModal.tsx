@@ -21,6 +21,7 @@ type FoodItem = {
     type: string;
     uid: string;
     volume: string;
+    is_active?: number;
 };
 
 const MenuButtonAndModal = () => {
@@ -155,10 +156,11 @@ const MenuButtonAndModal = () => {
                 const response = await foodAPI.getFoodList(sessionId); 
                 
                 if (response.code === 200) {
-                    const foodList = response.data.food_list;
-                    setFoodList(foodList);
-                    // 이미지 프리로딩
-                    const imageUrls = foodList
+                    // 활성화된(삭제되지 않은) 식품만 노출
+                    const activeFoodList = response.data.food_list.filter((food: any) => food.is_active === 1);
+                    setFoodList(activeFoodList);
+                    // 이미지 프리로딩 (활성 항목만)
+                    const imageUrls = activeFoodList
                         .map(food => food.image_url)
                         .filter(url => url && url.trim() !== '');
                     preloadImages(imageUrls);
@@ -303,7 +305,7 @@ const MenuButtonAndModal = () => {
                 animationType="fade"
                 onRequestClose={() => setBarcodeModalVisible(false)}
             >
-                <View style={styles.barcodeModalBackground}>
+                <View style={styles.ModalBackgroundShade}>
                     <View style={styles.barcodeModalContent}>
                         <View style={styles.modalHeader}>
                             <TouchableOpacity onPress={() => setBarcodeModalVisible(false)}> 

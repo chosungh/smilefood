@@ -267,19 +267,6 @@ export default function BarcodeScanScreen() {
         
         <TouchableOpacity 
           style={[
-            styles.button,
-            (isProcessing || hasScanned) && styles.processingButton
-          ]} 
-          onPress={toggleCameraFacing}
-          disabled={isProcessing || hasScanned}
-        >
-          <Text style={styles.buttonText}>
-            {hasScanned ? '완료됨' : '카메라 전환'}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[
             styles.button, 
             scanEnabled ? styles.scanningButton : styles.captureButton,
             (isProcessing || hasScanned) && styles.processingButton
@@ -298,6 +285,20 @@ export default function BarcodeScanScreen() {
             }
           </Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[
+            styles.button,
+            (isProcessing || hasScanned) && styles.processingButton
+          ]} 
+          onPress={toggleCameraFacing}
+          disabled={isProcessing || hasScanned}
+        >
+          <Text style={styles.buttonText}>
+            {hasScanned ? '완료됨' : '카메라 전환'}
+          </Text>
+        </TouchableOpacity>
+        
       </View>
       </View>
     </SafeAreaWrapper>
