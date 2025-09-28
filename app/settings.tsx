@@ -21,10 +21,7 @@ export default function SettingsScreen() {
       '로그아웃',
       '로그아웃하시겠습니까?',
       [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
+        
         {
           text: '로그아웃',
           style: 'destructive',
@@ -52,6 +49,10 @@ export default function SettingsScreen() {
             }
           },
         },
+        {
+          text: '취소',
+          style: 'cancel',
+        },
       ]
     );
   };
@@ -66,6 +67,10 @@ export default function SettingsScreen() {
 
   const handleProfileEdit = () => {
     router.push('/profile-edit');
+  };
+
+  const handleChangePassword = () => {
+    router.push('/change-password');
   };
 
   const handleRecipeLog = () => {
@@ -107,6 +112,11 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
           
+          <TouchableOpacity style={styles.menuItem} onPress={handleChangePassword}>
+            <Text style={styles.menuItemText}>비밀번호 변경</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.menuItem} onPress={handleLoginHistory}>
             <Text style={styles.menuItemText}>로그인 기록</Text>
             <Text style={styles.menuItemArrow}>→</Text>

@@ -11,7 +11,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  Alert
 } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
@@ -42,6 +43,8 @@ export default function MainScreen() {
   const [foodList, setFoodList] = useState<FoodItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = useRef(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedFids, setSelectedFids] = useState<string[]>([]);
 
   // API FoodItem을 로컬 FoodItem으로 변환하는 함수
   const transformFoodItem = useCallback((apiFood: any): FoodItem => {
@@ -136,8 +139,12 @@ export default function MainScreen() {
 
   // 식품 상세정보 화면으로 이동
   const navigateToFoodDetail = useCallback((item: FoodItem) => {
+    if (isSelectionMode) {
+      setSelectedFids(prev => prev.includes(item.fid) ? prev.filter(id => id !== item.fid) : [...prev, item.fid]);
+      return;
+    }
     router.push(`/food-detail?fid=${item.fid}`);
-  }, [router]);
+  }, [router, isSelectionMode]);
 
   // 식품 삭제
   const DeleteFood = useCallback(async (fid: string) => {
@@ -173,13 +180,24 @@ export default function MainScreen() {
     );
   }, [sessionId, onRefresh, showAlert]);
 
-  // 식품 리스트를 메모이제이션하여 불필요한 리렌더링 방지
-  const memoizedFoodList = useMemo(() => foodList, [foodList]);
+  // 식품 리스트 정렬(소비기한 남은 일수 오름차순) 및 메모이제이션
+  const memoizedFoodList = useMemo(() => {
+    return [...foodList].sort((a, b) => a.days_remaining - b.days_remaining);
+  }, [foodList]);
   
   // FoodCard 컴포넌트를 메모이제이션하여 불필요한 리렌더링 방지
   const renderFoodCard = useCallback(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
-    return <FoodCard key={item.fid} item={item} isLast={isLast} onPress={navigateToFoodDetail} />;
-  }, [navigateToFoodDetail]);
+    return (
+      <FoodCard
+        key={item.fid}
+        item={item}
+        isLast={isLast}
+        onPress={navigateToFoodDetail}
+        showCheckbox={isSelectionMode}
+        selected={selectedFids.includes(item.fid)}
+      />
+    );
+  }, [navigateToFoodDetail, isSelectionMode, selectedFids]);
 
   const handleSettings = useCallback(() => {
     router.push('/settings');
@@ -280,7 +298,7 @@ export default function MainScreen() {
   );
 
   // 식품 리스트 뷰 생성
-  const FoodCard = React.memo(({ item, isLast, onPress }: { item: FoodItem, isLast?: boolean, onPress: (item: FoodItem) => void }) => {
+  const FoodCard = React.memo(({ item, isLast, onPress, showCheckbox, selected }: { item: FoodItem, isLast?: boolean, onPress: (item: FoodItem) => void, showCheckbox?: boolean, selected?: boolean }) => {
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     
@@ -296,7 +314,10 @@ export default function MainScreen() {
     
     return (
       <TouchableOpacity 
-        style={[styles.FoodListView, isLast && styles.FoodListLastView]}
+        style={[
+          styles.FoodListView,
+          isLast && styles.FoodListLastView
+        ]}
         onPress={() => onPress(item)}
         activeOpacity={0.7}
       >
@@ -324,8 +345,17 @@ export default function MainScreen() {
         </View>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Text style={styles.FoodListViewTitle}>{item.name}</Text>
-          <Text style={styles.FoodListViewContent}>유통기한 만료까지: {item.days_remaining}일</Text>
+          <Text style={[styles.FoodListViewContent, item.days_remaining <= 7 && styles.FoodListViewContentDanger]}>
+            {item.days_remaining < 0
+              ? '소비기한 만료'
+              : `소비기한 만료까지: ${item.days_remaining}일`}
+          </Text>
         </View>
+        {showCheckbox && (
+          <View style={[styles.selectCheckbox, selected && styles.selectCheckboxSelected]}>
+            {selected && <Ionicons name="checkmark" size={16} color="#fff" />}
+          </View>
+        )}
       </TouchableOpacity>
     );
   });
@@ -341,6 +371,9 @@ export default function MainScreen() {
         <View style={styles.headerButtons}>
           <TouchableOpacity style={styles.chatHistoryButton} onPress={() => router.push('/chat-list')}>
             <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingsButton} onPress={() => { setIsSelectionMode(prev => !prev); setSelectedFids([]); }}>
+            <Text style={styles.settingsButtonText}>{isSelectionMode ? '선택 해제' : '선택 삭제'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
             <Text style={styles.settingsButtonText}>설정</Text>
@@ -375,6 +408,54 @@ export default function MainScreen() {
 
       {/* 식품 리스트 뷰 */}
       <View style={styles.MainFoodListView}>
+        {isSelectionMode && (
+          <View style={styles.selectionControls}>
+            <Text style={styles.selectionCount}>선택됨: {selectedFids.length}</Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                style={styles.selectionActionButton}
+                onPress={() => {
+                  const allSelected = selectedFids.length === memoizedFoodList.length && memoizedFoodList.length > 0;
+                  setSelectedFids(allSelected ? [] : memoizedFoodList.map(item => item.fid));
+                }}
+              >
+                <Text style={styles.selectionActionText}>
+                  {selectedFids.length === memoizedFoodList.length && memoizedFoodList.length > 0 ? '전체 해제' : '전체 선택'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.selectionActionButton, selectedFids.length === 0 && styles.selectionActionDisabled]}
+                onPress={() => {
+                  if (!sessionId || selectedFids.length === 0) return;
+                  Alert.alert(
+                    '선택 삭제',
+                    `${selectedFids.length}개 식품을 삭제하시겠습니까?`,
+                    [
+                      { text: '취소', style: 'cancel' },
+                      {
+                        text: '삭제', style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            for (const fid of selectedFids) {
+                              try { await foodAPI.deleteFood(sessionId, fid); } catch (e) { }
+                            }
+                            await onRefresh();
+                          } finally {
+                            setSelectedFids([]);
+                            setIsSelectionMode(false);
+                          }
+                        }
+                      }
+                    ]
+                  );
+                }}
+                disabled={selectedFids.length === 0}
+              >
+                <Text style={[styles.selectionActionText, selectedFids.length === 0 && styles.selectionActionTextDisabled]}>삭제</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
         <ScrollView
           refreshControl={
             <RefreshControl
@@ -468,6 +549,10 @@ const styles = StyleSheet.create({
   FoodListViewContent: {
     fontSize: 14,
     color: '#666',
+  },
+  FoodListViewContentDanger: {
+    color: '#ff3b30',
+    fontWeight: '700',
   },
   container: {
     flex: 1,
@@ -586,5 +671,49 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  selectionControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  selectionCount: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+  },
+  selectionActionButton: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  selectionActionDisabled: {
+    opacity: 0.5,
+  },
+  selectionActionText: {
+    color: '#333',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  selectionActionTextDisabled: {
+    color: '#999',
+  },
+  selectCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginLeft: 8,
+  },
+  selectCheckboxSelected: {
+    borderColor: '#007AFF',
+    backgroundColor: '#007AFF',
   }
 });

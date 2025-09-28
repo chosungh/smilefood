@@ -192,12 +192,12 @@ export default function FoodDetailScreen() {
             </View>
             
             <View style={styles.infoItem}>
-              <Text style={styles.infoTitle}>유통기한</Text>
+              <Text style={styles.infoTitle}>소비기한</Text>
               <Text style={styles.infoText}>{selectedFood.expiration_date_desc}</Text>
             </View>
             
             <View style={styles.infoItem}>
-              <Text style={styles.infoTitle}>유통기한 만료 날짜</Text>
+              <Text style={styles.infoTitle}>소비기한 만료 날짜</Text>
               <Text style={styles.infoText}>{selectedFood.expiration_date}</Text>
             </View>
             

@@ -48,8 +48,21 @@ api.interceptors.response.use(
 // FormData 헬퍼 함수
 const createFormData = (data: any) => {
   const formData = new FormData();
-  Object.keys(data).forEach(key => {
-    formData.append(key, data[key]);
+  Object.keys(data).forEach((key) => {
+    const value = data[key];
+    if (value === undefined || value === null) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => formData.append(key, String(item)));
+      return;
+    }
+    if (typeof value === 'object' && value && 'uri' in value) {
+      // RN 파일 객체({ uri, type, name }) 지원
+      // @ts-ignore
+      formData.append(key, value);
+      return;
+    }
+    // 기본 문자열 처리
+    formData.append(key, String(value));
   });
   return formData;
 };
@@ -140,6 +153,33 @@ export const authAPI = {
     const formData = createFormData({ email, password });
     const response = await api.delete('/user', {
       data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // 프로필 업데이트 (multipart/form-data)
+  // 전송 필드: sid(필수), name(옵션), profile_image_url(옵션), password(옵션), new_password(옵션)
+  updateProfile: async (
+    sid: string,
+    params?: {
+      name?: string;
+      profile_image_url?: string | { uri: string; type?: string; name?: string };
+      password?: string;
+      new_password?: string;
+    }
+  ) => {
+    const payload = {
+      sid,
+      name: params?.name,
+      profile_image_url: params?.profile_image_url,
+      password: params?.password,
+      new_password: params?.new_password,
+    };
+    const formData = createFormData(payload);
+    const response = await api.post('/user/profile', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -285,6 +325,8 @@ export const foodAPI = {
     const response = await api.get(`/food${params}`);
     return response.data;
   },
+
+  
 };
 
 export default api;

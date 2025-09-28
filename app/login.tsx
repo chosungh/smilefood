@@ -5,6 +5,7 @@ import {
     Platform,
     ScrollView,
     StatusBar,
+    Alert,
     StyleSheet,
     Text,
     TextInput,

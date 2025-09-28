@@ -65,9 +65,15 @@ const MenuButtonAndModal = () => {
                 const response = await foodAPI.requestFoodChat(sessionId, fidList);
             
                 if (response.code === 200) {
-                    Alert.alert('AI 추천 결과', response.data.chat_info.response || '추천 결과를 받았습니다.', [
-                        { text: '확인' }
-                    ]);
+                    const fcid = response.data.chat_info.fcid;
+                    // 모달 닫기 및 선택 초기화 후 상세 페이지로 이동
+                    setAiModalVisible(false);
+                    setSelectedFoodIds([]);
+                    if (fcid) {
+                        router.push(`/chat-detail?fcid=${fcid}`);
+                    } else {
+                        Alert.alert('오류', '레시피 상세 정보를 불러올 수 없습니다.');
+                    }
                 } else {
                     Alert.alert('오류', response.message);
                 }
@@ -594,7 +600,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     foodCardSelected: {
-        backgroundColor: '#f0f8ff',
+        backgroundColor: '#ffffff',
     },
     imageContainer: {
         position: 'relative',
