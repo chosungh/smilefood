@@ -3892,7 +3892,7 @@ expo-constants@~18.0.8, expo-constants@~18.0.9:
     "@expo/config" "~12.0.9"
     "@expo/env" "~2.0.7"
 
-expo-file-system@~19.0.15:
+expo-file-system@^19.0.15, expo-file-system@~19.0.15:
   version "19.0.15"
   resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-19.0.15.tgz#ef13ce8bea6bc683f50376749bdb42c028173111"
   integrity sha512-sRLW+3PVJDiuoCE2LuteHhC7OxPjh1cfqLylf1YG1TDEbbQXnzwjfsKeRm6dslEPZLkMWfSLYIrVbnuq5mF7kQ==

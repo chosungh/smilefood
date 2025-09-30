@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { clearAuthData, loadAuthData, saveAuthData } from '../utils/storage';
 
 interface UserInfo {
   uid: string;
@@ -79,12 +79,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsLoggedIn(false);
     setNavigationReset(true);
     
-    // AsyncStorage에서도 데이터 제거
+    // 파일 시스템에서도 데이터 제거
     try {
-      await AsyncStorage.removeItem('sessionId');
-      await AsyncStorage.removeItem('userInfo');
+      await clearAuthData();
     } catch (error) {
-      console.error('AsyncStorage 정리 중 오류:', error);
+      console.error('인증 데이터 정리 중 오류:', error);
     }
   }, []);
 
@@ -102,23 +101,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // 세션 ID 확인
-        const storedSessionId = await AsyncStorage.getItem('sessionId');
-        if (storedSessionId) {
-          setSessionId(storedSessionId);
-          setIsLoggedIn(true);
+        // 파일 시스템에서 인증 데이터 로드
+        const authData = await loadAuthData();
+        
+        // 세션 ID 설정
+        if (authData.sessionId) {
+          setSessionId(authData.sessionId);
+          setIsLoggedIn(authData.isLoggedIn);
         }
 
-        // 첫 실행 여부 확인
-        const hasLaunched = await AsyncStorage.getItem('hasLaunched');
-        if (hasLaunched) {
-          setIsFirstLaunch(false);
-        }
+        // 첫 실행 여부 설정
+        setIsFirstLaunch(authData.isFirstLaunch);
 
-        // 사용자 정보 확인
-        const storedUserInfo = await AsyncStorage.getItem('userInfo');
-        if (storedUserInfo) {
-          setUserInfo(JSON.parse(storedUserInfo));
+        // 사용자 정보 설정
+        if (authData.userInfo) {
+          setUserInfo(authData.userInfo);
         }
       } catch (error) {
         console.error('앱 초기화 오류:', error);
@@ -130,27 +127,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleSetSessionId = useCallback(async (value: string | null) => {
     setSessionId(value);
-    if (value) {
-      await AsyncStorage.setItem('sessionId', value);
-    } else {
-      await AsyncStorage.removeItem('sessionId');
-    }
+    await saveAuthData({ 
+      sessionId: value, 
+      isLoggedIn: !!value 
+    });
   }, []);
 
   const handleSetIsFirstLaunch = useCallback(async (value: boolean) => {
     setIsFirstLaunch(value);
-    if (!value) {
-      await AsyncStorage.setItem('hasLaunched', 'true');
-    }
+    await saveAuthData({ isFirstLaunch: value });
   }, []);
 
   const handleSetUserInfo = useCallback(async (value: UserInfo | null) => {
     setUserInfo(value);
-    if (value) {
-      await AsyncStorage.setItem('userInfo', JSON.stringify(value));
-    } else {
-      await AsyncStorage.removeItem('userInfo');
-    }
+    await saveAuthData({ userInfo: value });
   }, []);
 
   // Alert 표시 함수
