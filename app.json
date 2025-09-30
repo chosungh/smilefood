@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SmileFood",
-    "slug": "SmileFood",
+    "slug": "smilefood",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -18,7 +18,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "statusBarStyle": "dark"
+      "statusBarStyle": "dark",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "kr.szk.smilefood"
     },
     "web": {
       "bundler": "metro",
@@ -47,6 +52,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "12174b17-5664-47b9-af0c-8fd84dbe7ab3"
+      }
+    },
+    "owner": "leegeonhee"
   }
 }
