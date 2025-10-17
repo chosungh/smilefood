@@ -71,6 +71,14 @@ export default function SettingsScreen() {
   const handleRecipeLog = () => {
     router.push('/chat-list');
   }
+
+  const handlePrivacyPolicy = () => {
+    Linking.openURL('https://url.dyhs.kr/smilefood_pp');
+  };
+
+  const handleReport = () => {
+    Linking.openURL('https://url.dyhs.kr/smilefood_report');
+  };
   
 
   return (
@@ -96,7 +104,7 @@ export default function SettingsScreen() {
         </View>
         
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>레시피</Text>
+          <Text style={styles.sectionTitle}>AI 레시피</Text>
           
           <TouchableOpacity style={[styles.menuItem, styles.menuItemFirst, styles.menuItemLast]} onPress={handleRecipeLog}>
             <Text style={styles.menuItemText}>레시피 추천 내역</Text>
@@ -128,14 +136,17 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 문의하기 */}
-        <View style={{ marginHorizontal: 20, marginTop: 16 }}>
-          <TouchableOpacity
-            style={styles.supportButton}
-            onPress={() => Linking.openURL('https://answer.moaform.com/answers/Mzo2VG')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.supportButtonText}>문의하기</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>기타</Text>
+          
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemFirst]} onPress={handlePrivacyPolicy}>
+            <Text style={styles.menuItemText}>개인정보처리방침</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={handleReport}>
+            <Text style={styles.menuItemText}>문의/제보</Text>
+            <Text style={styles.menuItemArrow}>→</Text>
           </TouchableOpacity>
         </View>
       </View>

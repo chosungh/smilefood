@@ -1,15 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
@@ -26,6 +28,7 @@ export default function RegisterScreen() {
   const [error, setError] = useState('');
   const [timer, setTimer] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const [isPrivacyPolicyAgreed, setIsPrivacyPolicyAgreed] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
   const { } = useAppContext();
@@ -80,6 +83,7 @@ export default function RegisterScreen() {
   const handleVerifyCode = async () => {
     if (!verificationCode) {
       setError('인증 코드를 입력해주세요.');
+      Alert.alert('오류', '인증 코드를 입력해주세요.');
       return;
     }
 
@@ -93,13 +97,21 @@ export default function RegisterScreen() {
         setIsEmailVerified(true);
         Alert.alert('성공', response.message);
       } else {
-        setError(response.message || '인증 코드가 일치하지 않습니다.');
+        const errorMessage = response.message || '인증 코드가 일치하지 않습니다.';
+        setError(errorMessage);
+        Alert.alert('인증 실패', errorMessage);
       }
     } catch (error: any) {
-      setError(error.response?.data?.message || '인증 코드 확인 중 오류가 발생했습니다.');
+      const errorMessage = error.response?.data?.message || '인증 코드 확인 중 오류가 발생했습니다.';
+      setError(errorMessage);
+      Alert.alert('오류', errorMessage);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePrivacyPolicyPress = () => {
+    Linking.openURL('https://url.dyhs.kr/smilefood_pp');
   };
 
   const handleRegister = async () => {
@@ -110,6 +122,12 @@ export default function RegisterScreen() {
 
     if (!isEmailVerified) {
       setError('이메일 인증을 완료해주세요.');
+      return;
+    }
+
+    if (!isPrivacyPolicyAgreed) {
+      setError('개인정보처리방침에 동의해주세요.');
+      Alert.alert('동의 필요', '개인정보처리방침에 동의해주세요.');
       return;
     }
 
@@ -236,15 +254,33 @@ export default function RegisterScreen() {
               />
             </View>
 
+            <View style={styles.privacyContainer}>
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => setIsPrivacyPolicyAgreed(!isPrivacyPolicyAgreed)}
+              >
+                <View style={[styles.checkbox, isPrivacyPolicyAgreed && styles.checkedBox]}>
+                  {isPrivacyPolicyAgreed && <Text style={styles.checkmark}>✓</Text>}
+                </View>
+                <Text style={styles.privacyText}>
+                  <Text style={styles.privacyTextNormal}>개인정보처리방침에 </Text>
+                  <Text style={styles.privacyTextLink} onPress={handlePrivacyPolicyPress}>
+                    동의
+                  </Text>
+                  <Text style={styles.privacyTextNormal}>합니다</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <TouchableOpacity
               style={[
                 styles.registerButton,
-                (!isEmailVerified || isLoading) && styles.disabledButton,
+                (!isEmailVerified || !isPrivacyPolicyAgreed || isLoading) && styles.disabledButton,
               ]}
               onPress={handleRegister}
-              disabled={!isEmailVerified || isLoading}
+              disabled={!isEmailVerified || !isPrivacyPolicyAgreed || isLoading}
             >
               <Text style={styles.registerButtonText}>
                 {isLoading ? '처리 중...' : '회원가입'}
@@ -353,6 +389,45 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  privacyContainer: {
+    marginBottom: 20,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    borderRadius: 4,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  checkedBox: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  privacyText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  privacyTextNormal: {
+    color: '#333',
+  },
+  privacyTextLink: {
+    color: '#007AFF',
+    textDecorationLine: 'underline',
   },
   errorText: {
     color: '#ff3b30',

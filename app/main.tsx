@@ -4,15 +4,15 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Dimensions,
-  RefreshControl,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Alert
+    Alert,
+    Dimensions,
+    RefreshControl,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
@@ -345,9 +345,14 @@ export default function MainScreen() {
         </View>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Text style={styles.FoodListViewTitle}>{item.name}</Text>
-          <Text style={[styles.FoodListViewContent, item.days_remaining <= 7 && styles.FoodListViewContentDanger]}>
-            {item.days_remaining < 0
-              ? '소비기한 만료'
+          <Text style={[
+            styles.FoodListViewContent,
+            item.days_remaining <= 0 && styles.FoodListViewContentExpired,
+            item.days_remaining > 0 && item.days_remaining <= 7 && styles.FoodListViewContentDanger,
+            item.days_remaining > 7 && item.days_remaining <= 14 && styles.FoodListViewContentWarning
+          ]}>
+            {item.days_remaining <= 0
+              ? '섭취에 주의하세요!'
               : `소비기한 만료까지: ${item.days_remaining}일`}
           </Text>
         </View>
@@ -550,9 +555,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  FoodListViewContentWarning: {
+    color: '#ff9500',
+    fontWeight: '600',
+  },
   FoodListViewContentDanger: {
     color: '#ff3b30',
     fontWeight: '700',
+  },
+  FoodListViewContentExpired: {
+    color: '#ff3b30',
+    fontWeight: 'bold',
   },
   container: {
     flex: 1,

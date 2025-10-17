@@ -140,11 +140,11 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <View style={styles.linkContainer}>
-              <TouchableOpacity onPress={() => router.push('/register')}>
-                <Text style={styles.linkText}>회원가입</Text>
-              </TouchableOpacity>
               <TouchableOpacity onPress={handleFindPassword}>
                 <Text style={styles.linkText}>비밀번호 찾기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/register')}>
+                <Text style={styles.linkText}>회원가입</Text>
               </TouchableOpacity>
             </View>
           </View>
