@@ -1,21 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '../services/api';
+import { ChangePasswordStyles as styles } from '../styles/GlobalStyles';
 
 export default function ChangePasswordScreen() {
   const router = useRouter();
@@ -128,84 +118,5 @@ export default function ChangePasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 40,
-    height: 40,
-  },
-  content: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
-    color: '#333',
-  },
-  submitButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
 
 

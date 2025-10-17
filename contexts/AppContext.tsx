@@ -24,6 +24,7 @@ interface AppContextType {
   isLoggedIn: boolean;
   sessionId: string | null;
   isFirstLaunch: boolean;
+  isAppInitialized: boolean;
   userInfo: UserInfo | null;
   refreshFoodList: (() => void) | null;
   isNavigationReset: boolean;
@@ -59,6 +60,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
+  const [isAppInitialized, setIsAppInitialized] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [refreshFoodList, setRefreshFoodList] = useState<(() => void) | null>(null);
   const [isNavigationReset, setNavigationReset] = useState(false);
@@ -119,6 +121,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       } catch (error) {
         console.error('앱 초기화 오류:', error);
+      } finally {
+        setIsAppInitialized(true);
       }
     };
 
@@ -166,6 +170,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isLoggedIn,
     sessionId,
     isFirstLaunch,
+    isAppInitialized,
     userInfo,
     refreshFoodList,
     setIsLoggedIn,
@@ -179,7 +184,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     alertState,
     showAlert,
     hideAlert
-  }), [isLoggedIn, sessionId, isFirstLaunch, userInfo, refreshFoodList, handleSetSessionId, handleSetIsFirstLaunch, handleSetUserInfo, clearNavigationStack, isNavigationReset, setNavigationReset, alertState, showAlert, hideAlert]);
+  }), [isLoggedIn, sessionId, isFirstLaunch, isAppInitialized, userInfo, refreshFoodList, handleSetSessionId, handleSetIsFirstLaunch, handleSetUserInfo, clearNavigationStack, isNavigationReset, setNavigationReset, alertState, showAlert, hideAlert]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

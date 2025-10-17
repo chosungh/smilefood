@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { Colors, GlobalStyles, ScreenStyles, Spacing } from '../styles/GlobalStyles';
+import { useAppContext } from '../contexts/AppContext';
 // SmileFoodLogo 대신 통일된 아이콘 이미지를 사용합니다
 
 const { width, height } = Dimensions.get('window');
@@ -38,6 +39,7 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
+  const { setIsFirstLaunch } = useAppContext();
 
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
@@ -56,7 +58,8 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    await setIsFirstLaunch(false);
     router.replace('/login');
   };
 

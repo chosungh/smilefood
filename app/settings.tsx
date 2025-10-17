@@ -1,15 +1,10 @@
 import { authAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import {
-    Alert,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
+import { SettingsStyles as styles } from '../styles/GlobalStyles';
 
 
 export default function SettingsScreen() {
@@ -94,7 +89,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>프로필</Text>
           
-          <TouchableOpacity style={styles.menuItem} onPress={handleProfileEdit}>
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemFirst, styles.menuItemLast]} onPress={handleProfileEdit}>
             <Text style={styles.menuItemText}>프로필 편집</Text>
             <Text style={styles.menuItemArrow}>→</Text>
           </TouchableOpacity>
@@ -103,7 +98,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>레시피</Text>
           
-          <TouchableOpacity style={styles.menuItem} onPress={handleRecipeLog}>
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemFirst, styles.menuItemLast]} onPress={handleRecipeLog}>
             <Text style={styles.menuItemText}>레시피 추천 내역</Text>
             <Text style={styles.menuItemArrow}>→</Text>
           </TouchableOpacity>
@@ -112,7 +107,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
           
-          <TouchableOpacity style={styles.menuItem} onPress={handleChangePassword}>
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemFirst]} onPress={handleChangePassword}>
             <Text style={styles.menuItemText}>비밀번호 변경</Text>
             <Text style={styles.menuItemArrow}>→</Text>
           </TouchableOpacity>
@@ -127,83 +122,23 @@ export default function SettingsScreen() {
             <Text style={styles.menuItemArrow}>→</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem} onPress={handleAccountDeletion}>
+          <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={handleAccountDeletion}>
             <Text style={styles.menuItemText}>회원탈퇴</Text>
             <Text style={styles.menuItemArrow}>→</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 문의하기 */}
+        <View style={{ marginHorizontal: 20, marginTop: 16 }}>
+          <TouchableOpacity
+            style={styles.supportButton}
+            onPress={() => Linking.openURL('https://answer.moaform.com/answers/Mzo2VG')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.supportButtonText}>문의하기</Text>
           </TouchableOpacity>
         </View>
       </View>
     </SafeAreaWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 40,
-    height: 40,
-  },
-  content: {
-    flex: 1,
-    paddingTop: 20,
-  },
-  section: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: '#f8f9fa',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  menuItemText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  menuItemArrow: {
-    fontSize: 16,
-    color: '#ccc',
-  },
-});

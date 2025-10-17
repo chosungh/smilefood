@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Text, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AppProvider } from '../contexts/AppContext';
@@ -10,8 +10,21 @@ import { AppProvider } from '../contexts/AppContext';
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    Pretendard: require('../assets/fonts/PretendardVariable.ttf'),
   });
+
+  if (loaded) {
+    const T: any = Text as any;
+    const TI: any = TextInput as any;
+
+    if (!T.defaultProps) T.defaultProps = {};
+    if (!T.defaultProps.style) T.defaultProps.style = { fontFamily: 'Pretendard' };
+    else T.defaultProps.style = [T.defaultProps.style, { fontFamily: 'Pretendard' }];
+
+    if (!TI.defaultProps) TI.defaultProps = {};
+    if (!TI.defaultProps.style) TI.defaultProps.style = { fontFamily: 'Pretendard' };
+    else TI.defaultProps.style = [TI.defaultProps.style, { fontFamily: 'Pretendard' }];
+  }
 
   if (!loaded) {
     return (

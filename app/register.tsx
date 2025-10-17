@@ -310,6 +310,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
+    color: '#000',
     backgroundColor: '#f9f9f9',
   },
   emailContainer: {

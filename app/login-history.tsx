@@ -1,16 +1,10 @@
 import { authAPI } from '@/services/api';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import {
-    ActivityIndicator,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
+import { LoginHistoryStyles as styles } from '../styles/GlobalStyles';
 
 interface SessionInfo {
   created_at: string;
@@ -106,16 +100,6 @@ export default function LoginHistoryScreen() {
           <Text style={styles.label}>로그인 시간:</Text>
           <Text style={styles.value}>{formatDate(item.created_at)}</Text>
         </View>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>마지막 접속:</Text>
-          <Text style={styles.value}>{formatDate(item.last_accessed)}</Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>만료 시간:</Text>
-          <Text style={styles.value}>{formatDate(item.expires_at)}</Text>
-        </View>
       </View>
     </View>
   );
@@ -177,146 +161,3 @@ export default function LoginHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  backButton: {
-    fontSize: 24,
-    color: '#007AFF',
-    fontWeight: 'bold',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  headerSpacer: {
-    width: 24,
-  },
-  content: {
-    flex: 1,
-    paddingTop: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#dc3545',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  deviceText: {
-    fontSize: 12,
-    color: '#666',
-    flex: 1,
-    textAlign: 'right',
-    marginLeft: 8,
-  },
-  cardContent: {
-    padding: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  value: {
-    fontSize: 14,
-    color: '#333',
-    flex: 1,
-    textAlign: 'right',
-    marginLeft: 8,
-  },
-});

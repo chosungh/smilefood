@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 import { getStatusBarHeight } from 'react-native-status-bar-height';
 
 const { width, height } = Dimensions.get('window');
@@ -64,6 +64,23 @@ export const BorderRadius = {
   round: 50,
 };
 
+// 공통 Shadow 스타일
+export const Shadow = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 3.84,
+  elevation: 5,
+};
+
+export const ShadowStrong = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.2,
+  shadowRadius: 3.84,
+  elevation: 5,
+};
+
 // 글로벌 스타일시트
 export const GlobalStyles = StyleSheet.create({
   // === 컨테이너 스타일 ===
@@ -121,14 +138,7 @@ export const GlobalStyles = StyleSheet.create({
     width: '100%',
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
-    shadowColor: Colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...Shadow,
   },
 
   cardWithMargin: {
@@ -136,14 +146,7 @@ export const GlobalStyles = StyleSheet.create({
     margin: Spacing.xl,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    shadowColor: Colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...Shadow,
   },
 
   // === 버튼 스타일 ===
@@ -152,14 +155,7 @@ export const GlobalStyles = StyleSheet.create({
     paddingVertical: isSmallScreen ? 14 : Spacing.lg,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
-    shadowColor: Colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...Shadow,
   },
 
   primaryButtonText: {
@@ -350,14 +346,7 @@ export const GlobalStyles = StyleSheet.create({
     paddingLeft: 10,
     paddingRight: 10,
     backgroundColor: Colors.white,
-    shadowColor: Colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...ShadowStrong,
     maxHeight: '80%',
   },
 
@@ -563,3 +552,171 @@ export const ScreenStyles = StyleSheet.create({
 });
 
 export default GlobalStyles;
+
+// === 화면별 통합 스타일 (중복 제거/중앙화) ===
+export const LoginHistoryStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  backButton: {
+    fontSize: 24,
+    color: '#007AFF',
+    fontWeight: 'bold',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  headerSpacer: { width: 24 },
+  content: { flex: 1, paddingTop: 20 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 16, fontSize: 16, color: '#666' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+  errorText: { fontSize: 16, color: '#dc3545', textAlign: 'center', marginBottom: 20 },
+  retryButton: { backgroundColor: '#007AFF', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8 },
+  retryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyText: { fontSize: 16, color: '#666' },
+  listContainer: { paddingHorizontal: 20, paddingBottom: 20 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  statusContainer: { flexDirection: 'row', alignItems: 'center' },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  statusText: { fontSize: 14, fontWeight: '600' },
+  deviceText: { fontSize: 12, color: '#666', flex: 1, textAlign: 'right', marginLeft: 8 },
+  cardContent: { padding: 16 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  label: { fontSize: 14, color: '#666', fontWeight: '500' },
+  value: { fontSize: 14, color: '#333', flex: 1, textAlign: 'right', marginLeft: 8 },
+});
+
+export const ProfileEditStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f8f9fa', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: '#1a1a1a', flex: 1, textAlign: 'center' },
+  placeholder: { width: 40, height: 40 },
+  saveButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#007AFF' },
+  saveButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  disabledText: { opacity: 0.6 },
+  content: { flex: 1 },
+  profileSection: { alignItems: 'center', paddingVertical: 30, marginBottom: 20 },
+  avatarContainer: { position: 'relative', marginBottom: 12 },
+  avatar: { width: 100, height: 100, borderRadius: 50 },
+  avatarPlaceholder: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#007AFF', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#fff', fontSize: 36, fontWeight: 'bold' },
+  editImageButton: { position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#007AFF' },
+  changePhotoText: { color: '#007AFF', fontSize: 14, fontWeight: '500' },
+  modalOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.2)', paddingHorizontal: 20, paddingVertical: 40 },
+  modalContainer: { width: '100%', maxWidth: 480, backgroundColor: '#fff', borderRadius: 14, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3.84, elevation: 5 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#333', marginBottom: 12, textAlign: 'center' },
+  modalInput: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10, fontSize: 16, backgroundColor: '#fff', color: '#333', marginBottom: 16 },
+  modalButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
+  modalButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, backgroundColor: '#f0f0f0' },
+  modalButtonText: { fontSize: 14, color: '#333', fontWeight: '600' },
+  modalPrimary: { backgroundColor: '#007AFF' },
+  modalPrimaryText: { color: '#fff' },
+  formSection: { backgroundColor: '#fff', marginHorizontal: 20, borderRadius: 12, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5 },
+  inputGroup: { marginBottom: 20 },
+  label: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 8 },
+  input: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, backgroundColor: '#fff' },
+  readOnlyInput: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#f8f9fa' },
+  readOnlyText: { fontSize: 16, color: '#666' },
+});
+
+export const FoodDetailStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e9ecef' },
+  backButton: { padding: 8 },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'center' },
+  headerSpacer: { width: 40 },
+  content: { flex: 1, padding: 20 },
+  contentContainer: { paddingBottom: 40 },
+  imageContainer: { alignItems: 'center', marginBottom: 24 },
+  foodImage: { width: Dimensions.get('window').width - 80, height: Dimensions.get('window').width - 80, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5 },
+  placeholderImage: { width: Dimensions.get('window').width - 80, height: Dimensions.get('window').width - 80, borderRadius: 16, backgroundColor: '#f8f9fa', justifyContent: 'center', alignItems: 'center' },
+  placeholderText: { fontSize: 60 },
+  infoContainer: { backgroundColor: '#fff', borderRadius: 16, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5 },
+  foodName: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 20, textAlign: 'center' },
+  infoSection: { marginBottom: 24 },
+  infoItem: { borderBottomWidth: 1, borderBottomColor: '#f4f4f4', paddingVertical: 16 },
+  infoTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 },
+  infoText: { fontSize: 14, color: '#666', lineHeight: 20 },
+  deleteButton: { backgroundColor: '#fff', borderWidth: 2, borderColor: '#ff0000', borderRadius: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' },
+  deleteButtonText: { color: '#ff0000', fontSize: 16, fontWeight: 'bold' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+});
+
+export const SettingsStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e9ecef' },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f8f9fa', justifyContent: 'center', alignItems: 'center', ...Shadow },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: '#1a1a1a', flex: 1, textAlign: 'center' },
+  placeholder: { width: 40, height: 40 },
+  content: { flex: 1, paddingTop: 20 },
+  section: { backgroundColor: 'transparent', marginHorizontal: 20, borderRadius: 0, overflow: 'visible' },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#666', paddingHorizontal: 20, paddingVertical: 12, backgroundColor: 'transparent', marginBottom: 8 },
+  menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', backgroundColor: '#fff', ...Shadow },
+  menuItemText: { fontSize: 16, color: '#333' },
+  menuItemArrow: { fontSize: 16, color: '#ccc' },
+  // 섹션 내 첫/마지막 아이템 둥글게 처리
+  menuItemFirst: { borderTopLeftRadius: 12, borderTopRightRadius: 12 },
+  menuItemLast: { borderBottomLeftRadius: 12, borderBottomRightRadius: 12, borderBottomWidth: 0 },
+  // 하단 문의하기 버튼
+  supportButton: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 12, alignItems: 'center', ...Shadow },
+  supportButtonText: { color: '#333', fontSize: 16, fontWeight: '600' },
+});
+
+export const ChangePasswordStyles = StyleSheet.create({
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e9ecef' },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f8f9fa', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: '#1a1a1a', flex: 1, textAlign: 'center' },
+  placeholder: { width: 40, height: 40 },
+  content: { flexGrow: 1, padding: 20 },
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5 },
+  inputGroup: { marginBottom: 16 },
+  label: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 8 },
+  input: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, backgroundColor: '#fff', color: '#333' },
+  submitButton: { backgroundColor: '#007AFF', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 8 },
+  submitButtonDisabled: { backgroundColor: '#ccc' },
+  submitButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});

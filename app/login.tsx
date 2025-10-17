@@ -1,20 +1,20 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    Alert,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '../services/api';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -150,6 +150,8 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      
     </SafeAreaWrapper>
   );
 }
@@ -200,6 +202,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
+    color: '#000',
     backgroundColor: '#f9f9f9',
   },
   loginButton: {
