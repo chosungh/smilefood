@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "smilefood",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "jsEngine": "hermes",
     "ios": {
       "supportsTablet": true,
@@ -22,8 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ],
       "package": "com.chosungh.smilefood"
     },
@@ -46,7 +46,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "SmileFood는 바코드를 스캔하기 위해 카메라 권한이 필요합니다. 예를 들어, 바코드를 스캔하면 앱은 음식 아이템을 식별하고 추적 목적으로 음식 목록에 추가합니다."
+          "cameraPermission": "바코드를 스캔하기 위해 카메라 권한이 필요합니다."
         }
       ],
       "expo-font",
