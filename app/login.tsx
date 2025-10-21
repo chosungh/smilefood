@@ -1,16 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
@@ -41,14 +41,16 @@ export default function LoginScreen() {
       const response = await authAPI.login(email, password);
       
       if (response.code === 200) {
-        setSessionId(response.data.sid);
-        setIsLoggedIn(true);
+        // 세션 ID와 로그인 상태를 동시에 저장
+        await setSessionId(response.data.sid);
+        await setIsLoggedIn(true);
         
         // 로그인 성공 후 사용자 정보 가져오기
         try {
           const sessionResponse = await authAPI.getSessionInfo(response.data.sid);
           const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
-          setUserInfo(userResponse.data.user_info);
+          await setUserInfo(userResponse.data.user_info);
+          console.log('로그인 성공 및 데이터 저장 완료');
         } catch (error: any) {
           console.error('사용자 정보 가져오기 오류:', error);
         }

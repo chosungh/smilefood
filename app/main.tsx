@@ -68,9 +68,9 @@ export default function MainScreen() {
       
       if (sessionResponse.data.session_info.is_active === 0) {
         showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
-        setSessionId(null);
-        setUserInfo(null);
-        setIsLoggedIn(false);
+        await setSessionId(null);
+        await setUserInfo(null);
+        await setIsLoggedIn(false);
         router.replace('/login');
         return false;
       }
@@ -91,9 +91,9 @@ export default function MainScreen() {
       
       if (sessionResponse.data.session_info.is_active === 0) {
         showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
-        setSessionId(null);
-        setUserInfo(null);
-        setIsLoggedIn(false);
+        await setSessionId(null);
+        await setUserInfo(null);
+        await setIsLoggedIn(false);
         router.replace('/login');
         return;
       }

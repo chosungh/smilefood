@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { clearAuthData, loadAuthData, saveAuthData } from '../utils/storage';
+import { clearAuthData, getAllAsyncStorageData, loadAuthData, saveAuthData } from '../utils/storage';
 
 interface UserInfo {
   uid: string;
@@ -76,14 +76,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 네비게이션 스택을 정리하는 함수
   const clearNavigationStack = useCallback(async () => {
     // 로그아웃 시 모든 상태를 초기화
-    setSessionId(null);
-    setUserInfo(null);
-    setIsLoggedIn(false);
+    await setSessionId(null);
+    await setUserInfo(null);
+    await setIsLoggedIn(false);
     setNavigationReset(true);
     
     // 파일 시스템에서도 데이터 제거
     try {
       await clearAuthData();
+      console.log('로그아웃 완료 - 모든 인증 데이터 삭제됨');
     } catch (error) {
       console.error('인증 데이터 정리 중 오류:', error);
     }
@@ -103,24 +104,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // 파일 시스템에서 인증 데이터 로드
+        // AsyncStorage 데이터 확인 (디버깅용)
+        await getAllAsyncStorageData();
+        
+        // AsyncStorage에서 인증 데이터 로드
         const authData = await loadAuthData();
         
-        // 세션 ID 설정
-        if (authData.sessionId) {
+        console.log('로드된 인증 데이터:', authData);
+        
+        // 세션 ID와 로그인 상태 설정
+        if (authData.sessionId && authData.isLoggedIn) {
           setSessionId(authData.sessionId);
-          setIsLoggedIn(authData.isLoggedIn);
+          setIsLoggedIn(true);
+          console.log('로그인 상태 복원됨:', authData.sessionId);
+        } else {
+          setSessionId(null);
+          setIsLoggedIn(false);
+          console.log('로그인 상태 없음');
         }
 
         // 첫 실행 여부 설정
         setIsFirstLaunch(authData.isFirstLaunch);
+        console.log('첫 실행 여부:', authData.isFirstLaunch);
 
         // 사용자 정보 설정
         if (authData.userInfo) {
           setUserInfo(authData.userInfo);
+          console.log('사용자 정보 복원됨:', authData.userInfo.name);
         }
       } catch (error) {
         console.error('앱 초기화 오류:', error);
+        // 오류 발생 시 기본값으로 설정
+        setSessionId(null);
+        setIsLoggedIn(false);
+        setIsFirstLaunch(true);
+        setUserInfo(null);
       } finally {
         setIsAppInitialized(true);
       }
@@ -145,6 +163,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleSetUserInfo = useCallback(async (value: UserInfo | null) => {
     setUserInfo(value);
     await saveAuthData({ userInfo: value });
+  }, []);
+
+  const handleSetIsLoggedIn = useCallback(async (value: boolean) => {
+    setIsLoggedIn(value);
+    await saveAuthData({ isLoggedIn: value });
   }, []);
 
   // Alert 표시 함수
@@ -173,7 +196,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isAppInitialized,
     userInfo,
     refreshFoodList,
-    setIsLoggedIn,
+    setIsLoggedIn: handleSetIsLoggedIn,
     setSessionId: handleSetSessionId,
     setIsFirstLaunch: handleSetIsFirstLaunch,
     setUserInfo: handleSetUserInfo,
@@ -184,7 +207,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     alertState,
     showAlert,
     hideAlert
-  }), [isLoggedIn, sessionId, isFirstLaunch, isAppInitialized, userInfo, refreshFoodList, handleSetSessionId, handleSetIsFirstLaunch, handleSetUserInfo, clearNavigationStack, isNavigationReset, setNavigationReset, alertState, showAlert, hideAlert]);
+  }), [isLoggedIn, sessionId, isFirstLaunch, isAppInitialized, userInfo, refreshFoodList, handleSetIsLoggedIn, handleSetSessionId, handleSetIsFirstLaunch, handleSetUserInfo, clearNavigationStack, isNavigationReset, setNavigationReset, alertState, showAlert, hideAlert]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserInfo {
   uid: string;
@@ -15,26 +15,11 @@ interface AuthData {
   isFirstLaunch: boolean;
 }
 
-const CACHE_DIR = (FileSystem as any).documentDirectory + 'smilefood/';
-const AUTH_FILE = CACHE_DIR + 'auth.json';
-
-// 캐시 디렉토리 생성
-const ensureCacheDir = async () => {
-  try {
-    const dirInfo = await FileSystem.getInfoAsync(CACHE_DIR);
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(CACHE_DIR, { intermediates: true });
-    }
-  } catch (error) {
-    console.warn('캐시 디렉토리 생성 실패:', error);
-  }
-};
+const AUTH_STORAGE_KEY = '@smilefood_auth_data';
 
 // 인증 데이터 저장
 export const saveAuthData = async (authData: Partial<AuthData>): Promise<boolean> => {
   try {
-    await ensureCacheDir();
-    
     // 기존 데이터 로드
     let existingData: AuthData = {
       sessionId: null,
@@ -44,13 +29,12 @@ export const saveAuthData = async (authData: Partial<AuthData>): Promise<boolean
     };
     
     try {
-      const fileInfo = await FileSystem.getInfoAsync(AUTH_FILE);
-      if (fileInfo.exists) {
-        const existingFile = await FileSystem.readAsStringAsync(AUTH_FILE);
-        existingData = JSON.parse(existingFile);
+      const existingDataString = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+      if (existingDataString) {
+        existingData = JSON.parse(existingDataString);
       }
     } catch (error) {
-      // 파일이 없거나 읽기 실패 시 기본값 사용
+      // 데이터가 없거나 읽기 실패 시 기본값 사용
       console.log('기존 인증 데이터 없음, 새로 생성');
     }
     
@@ -60,8 +44,8 @@ export const saveAuthData = async (authData: Partial<AuthData>): Promise<boolean
       ...authData
     };
     
-    // 파일에 저장
-    await FileSystem.writeAsStringAsync(AUTH_FILE, JSON.stringify(mergedData, null, 2));
+    // AsyncStorage에 저장
+    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mergedData));
     console.log('인증 데이터 저장 완료:', mergedData);
     return true;
   } catch (error) {
@@ -73,11 +57,10 @@ export const saveAuthData = async (authData: Partial<AuthData>): Promise<boolean
 // 인증 데이터 로드
 export const loadAuthData = async (): Promise<AuthData> => {
   try {
-    await ensureCacheDir();
+    const authDataString = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
     
-    const fileInfo = await FileSystem.getInfoAsync(AUTH_FILE);
-    if (!fileInfo.exists) {
-      console.log('인증 데이터 파일이 존재하지 않음');
+    if (!authDataString) {
+      console.log('인증 데이터가 존재하지 않음');
       return {
         sessionId: null,
         userInfo: null,
@@ -86,8 +69,7 @@ export const loadAuthData = async (): Promise<AuthData> => {
       };
     }
     
-    const fileContent = await FileSystem.readAsStringAsync(AUTH_FILE);
-    const authData: AuthData = JSON.parse(fileContent);
+    const authData: AuthData = JSON.parse(authDataString);
     console.log('인증 데이터 로드 완료:', authData);
     return authData;
   } catch (error) {
@@ -124,10 +106,7 @@ export const saveLoginState = async (isLoggedIn: boolean): Promise<boolean> => {
 // 모든 인증 데이터 삭제 (로그아웃)
 export const clearAuthData = async (): Promise<boolean> => {
   try {
-    const fileInfo = await FileSystem.getInfoAsync(AUTH_FILE);
-    if (fileInfo.exists) {
-      await FileSystem.deleteAsync(AUTH_FILE);
-    }
+    await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
     console.log('인증 데이터 삭제 완료');
     return true;
   } catch (error) {
@@ -145,5 +124,20 @@ export const removeAuthKey = async (key: keyof AuthData): Promise<boolean> => {
   } catch (error) {
     console.warn(`${key} 삭제 실패:`, error);
     return false;
+  }
+};
+
+// 모든 AsyncStorage 데이터 확인 (디버깅용)
+export const getAllAsyncStorageData = async (): Promise<void> => {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    console.log('AsyncStorage 키들:', keys);
+    
+    for (const key of keys) {
+      const value = await AsyncStorage.getItem(key);
+      console.log(`${key}:`, value);
+    }
+  } catch (error) {
+    console.warn('AsyncStorage 데이터 확인 실패:', error);
   }
 };
