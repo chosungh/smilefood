@@ -48,7 +48,7 @@
       <true/>
     </dict>
     <key>NSCameraUsageDescription</key>
-    <string>SmileFood는 바코드를 스캔하기 위해 카메라 권한이 필요합니다. 예를 들어, 바코드를 스캔하면 앱은 음식 아이템을 식별하고 추적 목적으로 음식 목록에 추가합니다.</string>
+    <string>바코드를 스캔하기 위해 카메라 권한이 필요합니다.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSUserActivityTypes</key>
