@@ -1,8 +1,9 @@
 import { foodAPI } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 import { BorderRadius, Colors, FontSizes, GlobalStyles, ScreenStyles, Spacing } from '../styles/GlobalStyles';
@@ -28,10 +29,25 @@ export default function BarcodeScanScreen() {
   if (!permission.granted) {
     // Camera permissions are not granted yet.
     return (
-      <SafeAreaWrapper backgroundColor="#000">
+      <SafeAreaWrapper backgroundColor="#FFF">
+        {/* 뒤로가기 버튼 */}
+        <TouchableOpacity 
+          style={styles.backArrowButton} 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        
         <View style={GlobalStyles.centerContent}>
-          <Text style={styles.message}>We need your permission to show the camera</Text>
-          <Button onPress={requestPermission} title="grant permission" />
+          <Text style={styles.message}>바코드를 스캔하려면 카메라 권한이 필요합니다.</Text>
+          <View style={styles.permissionButtonContainer}>
+            <TouchableOpacity style={styles.backToMainButton} onPress={() => router.back()}>
+              <Text style={styles.backToMainButtonText} numberOfLines={1}>돌아가기</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.grantPermissionButton} onPress={requestPermission}>
+              <Text style={styles.buttonText} numberOfLines={1}>계속</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaWrapper>
     );
@@ -120,6 +136,14 @@ export default function BarcodeScanScreen() {
 
   return (
     <SafeAreaWrapper backgroundColor="#000">
+      {/* 뒤로가기 버튼 */}
+      <TouchableOpacity 
+        style={styles.backArrowButton} 
+        onPress={() => router.back()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#000" />
+      </TouchableOpacity>
+      
       <View style={ScreenStyles.cameraContainer}>
         <CameraView 
           ref={cameraRef}
@@ -246,6 +270,49 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: BorderRadius.xxl,
   },
+  permissionButtonContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+    gap: 15,
+    justifyContent: 'center',
+  },
+  grantPermissionButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: BorderRadius.xxl,
+    flex: 1,
+    minWidth: 100,
+    maxWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backToMainButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: BorderRadius.xxl,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    flex: 1,
+    minWidth: 100,
+    maxWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backToMainButtonText: {
+    fontSize: FontSizes.lg,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    textAlign: 'center',
+  },
+  backArrowButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 1000,
+    padding: 8,
+  },
   captureButton: {
     backgroundColor: '#007AFF',
   },
@@ -259,6 +326,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: 'bold',
     color: Colors.white,
+    textAlign: 'center',
   },
 
   // 로딩 및 정보 표시
