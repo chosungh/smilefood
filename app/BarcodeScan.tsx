@@ -120,7 +120,7 @@ export default function BarcodeScanScreen() {
         ]);
       }
     } catch (error: any) {
-      console.error('바코드 스캔 오류:', error);
+      console.warn('바코드 스캔 오류:', error);
       let errorMessage = '식품 추가에 실패했습니다.';
       const status = error?.response?.status;
       const serverMessage = error?.response?.data?.message;

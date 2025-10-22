@@ -64,6 +64,10 @@ const createFormData = (data: any) => {
     // 기본 문자열 처리
     formData.append(key, String(value));
   });
+  
+  // 디버깅을 위한 FormData 내용 로깅
+  console.log('FormData 생성됨:', Array.from(formData.entries()));
+  
   return formData;
 };
 
@@ -178,12 +182,19 @@ export const authAPI = {
       password: params?.password,
       new_password: params?.new_password,
     };
+    
+    console.log('API 요청 payload:', payload);
+    
     const formData = createFormData(payload);
     const response = await api.post('/user/profile', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    
+    console.log('API 응답 상태:', response.status);
+    console.log('API 응답 데이터:', response.data);
+    
     return response.data;
   },
 

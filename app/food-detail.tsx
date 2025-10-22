@@ -57,7 +57,7 @@ export default function FoodDetailScreen() {
   const DeleteFood = async (fid: string) => {
     Alert.alert(
       '식품 삭제',
-      '정말로 이 식품을 삭제하시겠습니까?',
+      '해당 식품을 삭제하시겠습니까?',
       [
         {
           text: '취소',

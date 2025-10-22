@@ -78,6 +78,31 @@ export default function LoginHistoryScreen() {
     return isActive === 1 ? '#28a745' : '#6c757d';
   };
 
+  const maskIPAddress = (ip: string) => {
+    // IPv4 주소 마스킹 (예: 192.168.1.100 -> 192.168.xxx.xxx)
+    if (ip.includes('.')) {
+      const parts = ip.split('.');
+      if (parts.length === 4) {
+        return `${parts[0]}.${parts[1]}.xxx.xxx`;
+      }
+    }
+    
+    // IPv6 주소 마스킹 (예: 2001:0db8:85a3:0000:0000:8a2e:0370:7334 -> 2001:0db8:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx)
+    if (ip.includes(':')) {
+      const parts = ip.split(':');
+      if (parts.length >= 4) {
+        // 앞의 2개 부분만 보여주고 나머지는 xxxx로 마스킹
+        const maskedParts = parts.map((part, index) => 
+          index < 4 ? part : 'xxxx'
+        );
+        return maskedParts.join(':');
+      }
+    }
+    
+    // 기타 경우 원본 반환
+    return ip;
+  };
+
   const renderSessionCard = ({ item }: { item: SessionInfo }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -93,7 +118,7 @@ export default function LoginHistoryScreen() {
       <View style={styles.cardContent}>
         <View style={styles.infoRow}>
           <Text style={styles.label}>IP 주소:</Text>
-          <Text style={styles.value}>{item.ip_address}</Text>
+          <Text style={styles.value}>{maskIPAddress(item.ip_address)}</Text>
         </View>
         
         <View style={styles.infoRow}>

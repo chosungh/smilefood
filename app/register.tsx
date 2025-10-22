@@ -180,12 +180,14 @@ export default function RegisterScreen() {
               <View style={styles.emailContainer}>
                 <TextInput
                   style={[styles.input, styles.emailInput]}
-                  placeholder="이메일을 입력하세요"
+                  placeholder="예시) me@example.com"
+                  placeholderTextColor="#999"
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  returnKeyType="next"
                   editable={!isEmailVerified}
                 />
                 <TouchableOpacity
@@ -215,10 +217,14 @@ export default function RegisterScreen() {
                   <TextInput
                     style={[styles.input, styles.verificationInput]}
                     placeholder="6자리 인증 코드를 입력하세요"
+                    placeholderTextColor="#999"
                     value={verificationCode}
                     onChangeText={setVerificationCode}
                     keyboardType="number-pad"
                     maxLength={6}
+                    returnKeyType="done"
+                    autoCapitalize="none"
+                    onSubmitEditing={handleVerifyCode}
                   />
                   <TouchableOpacity
                     style={styles.verifyCodeButton}
@@ -235,11 +241,13 @@ export default function RegisterScreen() {
               <Text style={styles.label}>비밀번호</Text>
               <TextInput
                 style={styles.input}
-                placeholder="비밀번호를 입력하세요"
+                placeholder="비밀번호를 입력해주세요."
+                placeholderTextColor="#999"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
+                returnKeyType="next"
               />
             </View>
 
@@ -247,10 +255,13 @@ export default function RegisterScreen() {
               <Text style={styles.label}>이름</Text>
               <TextInput
                 style={styles.input}
-                placeholder="실명을 입력하세요"
+                placeholder="이름을 입력해주세요."
+                placeholderTextColor="#999"
                 value={name}
                 onChangeText={setName}
-                autoCapitalize="words"
+                autoCapitalize="none"
+                returnKeyType="done"
+                onSubmitEditing={handleRegister}
               />
             </View>
 

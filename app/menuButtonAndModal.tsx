@@ -44,7 +44,7 @@ const MenuButtonAndModal = () => {
         router.push('/BarcodeScan');
     };
 
-    // 체크박스 토글 함수
+    // 체크박스 토글 함수 (최대 10개 제한)
     const toggleFoodSelection = (fid: string) => {
         setSelectedFoodIds(prev => {
         const isSelected = prev.includes(fid);
@@ -53,7 +53,11 @@ const MenuButtonAndModal = () => {
             // 이미 선택된 경우 제거
             return prev.filter(id => id !== fid);
         } else {
-            // 선택되지 않은 경우 추가
+            // 선택되지 않은 경우 - 최대 10개까지만 추가 가능
+            if (prev.length >= 10) {
+                Alert.alert('선택 제한', '최대 10개까지만 선택할 수 있습니다.');
+                return prev;
+            }
             return [...prev, fid];
         }
         });
@@ -231,15 +235,15 @@ const MenuButtonAndModal = () => {
     <View style={styles.ButtonListView}>
         {isOpen && (
             <TouchableOpacity style={styles.HiddenButton} onPress={() => handleCamera()}>
-                <Ionicons name='scan-outline' size={32} />
+                <Ionicons name='barcode-outline' size={32} />
             </TouchableOpacity>
         )}
 
         {isOpen && (
             <TouchableOpacity style={styles.HiddenButton} onPress={() => setBarcodeModalVisible(true)}>
-                <Ionicons name='barcode-outline' size={32} />
+                <Ionicons name='create-outline' size={32} />
             </TouchableOpacity>
-        )}          
+        )}
 
         {isOpen && (
             <TouchableOpacity style={styles.HiddenButton} onPress={() => {
@@ -275,7 +279,7 @@ const MenuButtonAndModal = () => {
                         {/* 선택된 개수 표시 */}
                         <View>
                             <Text style={styles.selectedCountText}>
-                            선택된 식품: {selectedFoodIds.length}
+                            선택된 식품: {selectedFoodIds.length}개
                             </Text>
                         </View>
                     

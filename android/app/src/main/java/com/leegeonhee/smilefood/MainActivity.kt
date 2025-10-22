@@ -1,4 +1,4 @@
-package com.chosungh.smilefood
+package com.leegeonhee.smilefood
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

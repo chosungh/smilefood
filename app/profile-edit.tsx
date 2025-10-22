@@ -15,20 +15,16 @@ export default function ProfileEditScreen() {
   const [name, setName] = useState(userInfo?.name || '');
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [imageUrl, setImageUrl] = useState(userInfo?.profile_url || '');
-  const [saving, setSaving] = useState(false);
 
   const openImageModal = () => {
     setImageUrl(userInfo?.profile_url || '');
     setImageModalVisible(true);
   };
 
-  const handleConfirmImage = () => {
-    // 모달은 입력만 받고 저장은 상단 저장 버튼에서 일괄 처리
-    if (imageUrl.trim() === '') {
-      Alert.alert('오류', '이미지 URL을 입력하세요.');
-      return;
-    }
+  const handleConfirmImage = async () => {
     setImageModalVisible(false);
+    
+    handleSaveProfile();
   };
 
   const handleSaveProfile = async () => {
@@ -42,22 +38,26 @@ export default function ProfileEditScreen() {
       return;
     }
     try {
-      setSaving(true);
-      const params: any = {};
-      if (trimmed !== (userInfo?.name || '')) params.name = trimmed;
-      if (imageUrl !== (userInfo?.profile_url || '')) params.profile_image_url = imageUrl;
-      if (Object.keys(params).length === 0) {
-        setSaving(false);
-        Alert.alert('안내', '변경된 내용이 없습니다.');
-        return;
+      const params: any = {
+        name: trimmed,
+        profile_image_url: imageUrl
+      };
+      
+      console.log('프로필 업데이트 요청:', { name: trimmed, profile_image_url: imageUrl });
+      
+      const response = await authAPI.updateProfile(sessionId, params);
+      console.log('프로필 업데이트 응답:', response);
+      
+      // 서버 응답에서 업데이트된 정보 확인
+      if (response && response.code === 200) {
+        setUserInfo(userInfo ? { ...userInfo, name: trimmed, profile_url: imageUrl } : userInfo);
+        Alert.alert('완료', '프로필이 저장되었습니다.');
+      } else {
+        Alert.alert('오류', response?.message || '프로필 저장에 실패했습니다.');
       }
-      await authAPI.updateProfile(sessionId, params);
-      setUserInfo(userInfo ? { ...userInfo, name: trimmed, profile_url: imageUrl } : userInfo);
-      Alert.alert('완료', '프로필이 저장되었습니다.');
     } catch (e: any) {
-      Alert.alert('오류', e?.response?.data?.message || '프로필 저장에 실패했습니다.');
-    } finally {
-      setSaving(false);
+      console.error('프로필 업데이트 에러:', e);
+      Alert.alert('오류', e?.response?.data?.message || e?.message || '프로필 저장에 실패했습니다.');
     }
   };
 
@@ -69,21 +69,7 @@ export default function ProfileEditScreen() {
           <Ionicons name="arrow-back" size={24} color="#007AFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>프로필 편집</Text>
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSaveProfile}
-          disabled={
-            saving ||
-            (name.trim() === (userInfo?.name || '') && imageUrl === (userInfo?.profile_url || ''))
-          }
-        >
-          <Text style={[
-            styles.saveButtonText,
-            (saving || (name.trim() === (userInfo?.name || '') && imageUrl === (userInfo?.profile_url || ''))) && styles.disabledText
-          ]}>
-            {saving ? '저장 중...' : '저장'}
-          </Text>
-        </TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
 
       {/* Content */}
@@ -92,9 +78,9 @@ export default function ProfileEditScreen() {
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <TouchableOpacity onPress={openImageModal} activeOpacity={0.7}>
-              {userInfo?.profile_url ? (
+              {(imageUrl || userInfo?.profile_url) ? (
                 <Image 
-                  source={{ uri: userInfo.profile_url }} 
+                  source={{ uri: (imageUrl || userInfo?.profile_url) as string }} 
                   style={styles.avatar}
                   contentFit="cover"
                   transition={200}
@@ -126,8 +112,15 @@ export default function ProfileEditScreen() {
               value={name}
               onChangeText={setName}
               placeholder="이름을 입력하세요"
+              placeholderTextColor="#666"
               autoCapitalize="words"
-              returnKeyType="next"
+              returnKeyType="done"
+              onSubmitEditing={async () => {
+                const trimmed = name.trim();
+                if (trimmed.length > 0) {
+                  await handleSaveProfile();
+                }
+              }}
             />
           </View>
 
@@ -159,9 +152,10 @@ export default function ProfileEditScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>프로필 이미지 URL</Text>
+
             <TextInput
               style={styles.modalInput}
-              placeholder="이미지 URL을 입력하세요"
+              placeholder="URL을 입력하세요. (비움: 기본이미지)"
               placeholderTextColor="#999"
               autoCapitalize="none"
               value={imageUrl}
@@ -172,7 +166,7 @@ export default function ProfileEditScreen() {
                 <Text style={styles.modalButtonText}>취소</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalButton, styles.modalPrimary]} onPress={handleConfirmImage}>
-                <Text style={[styles.modalButtonText, styles.modalPrimaryText]}>확인</Text>
+                <Text style={[styles.modalButtonText, styles.modalPrimaryText]}>저장</Text>
               </TouchableOpacity>
             </View>
           </View>

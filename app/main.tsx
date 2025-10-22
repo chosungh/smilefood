@@ -4,15 +4,15 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    Alert,
-    Dimensions,
-    RefreshControl,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Dimensions,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
@@ -146,6 +146,14 @@ export default function MainScreen() {
     router.push(`/food-detail?fid=${item.fid}`);
   }, [router, isSelectionMode]);
 
+  // 길게 누르기로 선택삭제 모드 활성화
+  const handleLongPress = useCallback((item: FoodItem) => {
+    if (!isSelectionMode) {
+      setIsSelectionMode(true);
+      setSelectedFids([item.fid]);
+    }
+  }, [isSelectionMode]);
+
   // 식품 삭제
   const DeleteFood = useCallback(async (fid: string) => {
     showAlert(
@@ -193,11 +201,12 @@ export default function MainScreen() {
         item={item}
         isLast={isLast}
         onPress={navigateToFoodDetail}
+        onLongPress={handleLongPress}
         showCheckbox={isSelectionMode}
         selected={selectedFids.includes(item.fid)}
       />
     );
-  }, [navigateToFoodDetail, isSelectionMode, selectedFids]);
+  }, [navigateToFoodDetail, handleLongPress, isSelectionMode, selectedFids]);
 
   const handleSettings = useCallback(() => {
     router.push('/settings');
@@ -298,7 +307,7 @@ export default function MainScreen() {
   );
 
   // 식품 리스트 뷰 생성
-  const FoodCard = React.memo(({ item, isLast, onPress, showCheckbox, selected }: { item: FoodItem, isLast?: boolean, onPress: (item: FoodItem) => void, showCheckbox?: boolean, selected?: boolean }) => {
+  const FoodCard = React.memo(({ item, isLast, onPress, onLongPress, showCheckbox, selected }: { item: FoodItem, isLast?: boolean, onPress: (item: FoodItem) => void, onLongPress: (item: FoodItem) => void, showCheckbox?: boolean, selected?: boolean }) => {
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     
@@ -319,6 +328,7 @@ export default function MainScreen() {
           isLast && styles.FoodListLastView
         ]}
         onPress={() => onPress(item)}
+        onLongPress={() => onLongPress(item)}
         activeOpacity={0.7}
       >
         <View style={styles.imageContainer}>
@@ -377,11 +387,8 @@ export default function MainScreen() {
           <TouchableOpacity style={styles.chatHistoryButton} onPress={() => router.push('/chat-list')}>
             <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.settingsButton} onPress={() => { setIsSelectionMode(prev => !prev); setSelectedFids([]); }}>
-            <Text style={styles.settingsButtonText}>{isSelectionMode ? '선택 해제' : '선택 삭제'}</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
-            <Text style={styles.settingsButtonText}>설정</Text>
+            <Ionicons name="settings-outline" size={20} color="#007AFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -389,14 +396,14 @@ export default function MainScreen() {
       {/* Profile Card */}
       <TouchableOpacity style={styles.profileCard} onPress={() => router.push('/profile-edit')}>
         <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
+          <View style={[styles.avatar, userInfo?.profile_url && { backgroundColor: '#ffffff' }]}>
             {userInfo?.profile_url ? (
               <Image 
                 source={{ uri: userInfo.profile_url }} 
                 style={styles.avatarImage}
                 contentFit="cover"
                 transition={200}
-                cachePolicy="memory-disk"
+                cachePolicy="none"
               />
             ) : (
               <Text style={styles.avatarText}>
@@ -417,6 +424,15 @@ export default function MainScreen() {
           <View style={styles.selectionControls}>
             <Text style={styles.selectionCount}>선택됨: {selectedFids.length}</Text>
             <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                style={styles.selectionActionButton}
+                onPress={() => {
+                  setIsSelectionMode(false);
+                  setSelectedFids([]);
+                }}
+              >
+                <Text style={styles.selectionActionText}>취소</Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.selectionActionButton}
                 onPress={() => {
