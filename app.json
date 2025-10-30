@@ -4,7 +4,10 @@
     "slug": "smilefood",
     "version": "1.5",
     "ios": {
-      "bundleIdentifier": "kr.szk.smilefood"
+      "bundleIdentifier": "kr.szk.smilefood",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "kr.szk.smilefood"
