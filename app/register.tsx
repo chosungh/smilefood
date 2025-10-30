@@ -16,6 +16,7 @@ import {
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '../services/api';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
@@ -271,7 +272,7 @@ export default function RegisterScreen() {
                 onPress={() => setIsPrivacyPolicyAgreed(!isPrivacyPolicyAgreed)}
               >
                 <View style={[styles.checkbox, isPrivacyPolicyAgreed && styles.checkedBox]}>
-                  {isPrivacyPolicyAgreed && <Text style={styles.checkmark}>✓</Text>}
+                  {isPrivacyPolicyAgreed && <Ionicons name="checkmark-sharp" size={16} color="#fff" />}
                 </View>
                 <Text style={styles.privacyText}>
                   <Text style={styles.privacyTextNormal}>개인정보처리방침에 </Text>

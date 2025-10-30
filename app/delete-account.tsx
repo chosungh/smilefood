@@ -32,12 +32,8 @@ export default function DeleteAccountScreen() {
 
     Alert.alert(
       '회원탈퇴',
-      '정말로 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
+      '회원을 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
       [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
         {
           text: '탈퇴',
           style: 'destructive',
@@ -78,6 +74,10 @@ export default function DeleteAccountScreen() {
             }
           },
         },
+        {
+          text: '취소',
+          style: 'cancel',
+        }
       ]
     );
   };
@@ -114,7 +114,7 @@ export default function DeleteAccountScreen() {
         
         <View style={styles.warningContainer}>
           <Text style={styles.warningText}>
-            회원탈퇴를 진행하면 모든 데이터가 즉시 영구적으로 삭제되며, 복구할 수 없습니다.
+            회원탈퇴를 진행하면 모든 데이터가 영구적으로 삭제되며, 복구할 수 없습니다.
           </Text>
         </View>
 

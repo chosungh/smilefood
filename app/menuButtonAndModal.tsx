@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
 import { preloadImages } from '../utils/imageCache';
 
@@ -27,11 +27,9 @@ type FoodItem = {
 const MenuButtonAndModal = () => {
     const router = useRouter();
     const [AimodalVisible, setAiModalVisible] = useState(false);
-    const [BarcodemodalVisible, setBarcodeModalVisible] = useState(false);
+    // 수동등록 모달 제거로 인한 상태 정리
     const [isOpen, setIsOpen] = useState(false);
-    const [barcode, setBarcode] = useState('');
-    const [foodCount, setFoodCount] = useState('1');
-    const [isAddingFood, setIsAddingFood] = useState(false);
+    // 삭제: 수동등록 관련 상태 (barcode, foodCount, isAddingFood)
     const { sessionId, refreshFoodList } = useAppContext();
     const [foodList, setFoodList] = useState<FoodItem[]>([]);
     const [selectedFoodIds, setSelectedFoodIds] = useState<string[]>([]); // 선택된 식품 ID 배열
@@ -47,19 +45,19 @@ const MenuButtonAndModal = () => {
     // 체크박스 토글 함수 (최대 10개 제한)
     const toggleFoodSelection = (fid: string) => {
         setSelectedFoodIds(prev => {
-        const isSelected = prev.includes(fid);
-        
-        if (isSelected) {
-            // 이미 선택된 경우 제거
-            return prev.filter(id => id !== fid);
-        } else {
-            // 선택되지 않은 경우 - 최대 10개까지만 추가 가능
-            if (prev.length >= 10) {
-                Alert.alert('선택 제한', '최대 10개까지만 선택할 수 있습니다.');
-                return prev;
+            const isSelected = prev.includes(fid);
+
+            if (isSelected) {
+                // 이미 선택된 경우 제거
+                return prev.filter(id => id !== fid);
+            } else {
+                // 선택되지 않은 경우 - 최대 10개까지만 추가 가능
+                if (prev.length >= 10) {
+                    Alert.alert('선택 제한', '최대 10개까지만 선택할 수 있습니다.');
+                    return prev;
+                }
+                return [...prev, fid];
             }
-            return [...prev, fid];
-        }
         });
     };
 
@@ -67,7 +65,7 @@ const MenuButtonAndModal = () => {
         try {
             if (sessionId && fidList.length > 0) {
                 const response = await foodAPI.requestFoodChat(sessionId, fidList);
-            
+
                 if (response.code === 200) {
                     const fcid = response.data.chat_info.fcid;
                     // 모달 닫기 및 선택 초기화 후 상세 페이지로 이동
@@ -92,7 +90,7 @@ const MenuButtonAndModal = () => {
         const isSelected = selectedFoodIds.includes(item.fid);
         const [imageLoading, setImageLoading] = useState(true);
         const [imageError, setImageError] = useState(false);
-        
+
         const handleImageLoad = () => {
             setImageLoading(false);
             setImageError(false);
@@ -102,69 +100,69 @@ const MenuButtonAndModal = () => {
             setImageLoading(false);
             setImageError(true);
         };
-        
+
         return (
-        <TouchableOpacity 
-            style={[
-                styles.foodCard,
-                { height: cardHeight },
-                isSelected && styles.foodCardSelected
-            ]}
-            activeOpacity={0.7}
-            onPress={() => toggleFoodSelection(item.fid)}
-        >
-            <View style={styles.imageContainer}>
-                {item.image_url && !imageError ? (
-                    <Image 
-                        source={{ uri: item.image_url }} 
-                        style={[
-                            styles.foodImage,
-                            { height: cardHeight - 20 }
-                        ]} 
-                        contentFit="cover"
-                        transition={200}
-                        onLoad={handleImageLoad}
-                        onError={handleImageError}
-                        cachePolicy="memory-disk"
-                    />
-                ) : (
-                    <View style={styles.placeholderImage}>
-                        <Text style={styles.placeholderText}>📦</Text>
-                    </View>
-                )}
-                {imageLoading && item.image_url && (
-                    <View style={styles.loadingOverlay}>
-                        <View style={styles.loadingSpinner} />
-                    </View>
-                )}
-            </View>
-            <View style={styles.foodInfo}>
-                <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.foodCount}>수량: {item.count}</Text>
-            </View>
-            
-            {/* 체크박스 */}
-            <View style={[
-                styles.checkbox,
-                isSelected && styles.checkboxSelected
-            ]}>
-                {isSelected && (
-                    <Ionicons name="checkmark" size={16} color="#fff" />
-                )}
-            </View>
-        </TouchableOpacity>
+            <TouchableOpacity
+                style={[
+                    styles.foodCard,
+                    { height: cardHeight },
+                    isSelected && styles.foodCardSelected
+                ]}
+                activeOpacity={0.7}
+                onPress={() => toggleFoodSelection(item.fid)}
+            >
+                <View style={styles.imageContainer}>
+                    {item.image_url && !imageError ? (
+                        <Image
+                            source={{ uri: item.image_url }}
+                            style={[
+                                styles.foodImage,
+                                { height: cardHeight - 20 }
+                            ]}
+                            contentFit="cover"
+                            transition={200}
+                            onLoad={handleImageLoad}
+                            onError={handleImageError}
+                            cachePolicy="memory-disk"
+                        />
+                    ) : (
+                        <View style={styles.placeholderImage}>
+                            <Text style={styles.placeholderText}>📦</Text>
+                        </View>
+                    )}
+                    {imageLoading && item.image_url && (
+                        <View style={styles.loadingOverlay}>
+                            <View style={styles.loadingSpinner} />
+                        </View>
+                    )}
+                </View>
+                <View style={styles.foodInfo}>
+                    <Text style={styles.foodName}>{item.name}</Text>
+                    <Text style={styles.foodCount}>수량: {item.count}</Text>
+                </View>
+
+                {/* 체크박스 */}
+                <View style={[
+                    styles.checkbox,
+                    isSelected && styles.checkboxSelected
+                ]}>
+                    {isSelected && (
+                        <Ionicons name="checkmark" size={16} color="#fff" />
+                    )}
+                </View>
+            </TouchableOpacity>
         );
     };
 
     const toggle = () => {
-        setIsOpen(prev => !prev); 
+        setIsOpen(prev => !prev);
     };
 
     const showFoodList = async () => {
         try {
             if (sessionId) {
-                const response = await foodAPI.getFoodList(sessionId); 
-                
+                const response = await foodAPI.getFoodList(sessionId);
+
                 if (response.code === 200) {
                     // 활성화된(삭제되지 않은) 식품만 노출
                     const activeFoodList = response.data.food_list.filter((food: any) => food.is_active === 1);
@@ -177,226 +175,101 @@ const MenuButtonAndModal = () => {
                 }
             }
         } catch (error) { }
-    }               
+    }
 
-        const AddFood = async () => {
-        if (!sessionId || barcode === '') {
-            Alert.alert('알림', '바코드를 입력해주세요.');
+    // 선택된 식품들로 작업하는 함수 (FoodChat 실행)
+    const handleSelectedFoods = async () => {
+        if (selectedFoodIds.length < 2) {
+            Alert.alert('알림', '2개 이상의 식품을 선택해주세요.');
             return;
         }
 
-        if (!foodCount || parseInt(foodCount) < 1 || parseInt(foodCount) > 999) {
-            Alert.alert('알림', '식품 수량을 1~999 사이로 입력해주세요.');
-            return;
-        }
+        // FoodChat 함수 실행
+        await FoodChat(selectedFoodIds);
 
-        setIsAddingFood(true);
+        // 성공적으로 실행 후 모달 닫고 선택 초기화
+        setAiModalVisible(false);
+        setSelectedFoodIds([]);
+    };
 
-        try {
-            const response = await foodAPI.regiFood(sessionId, barcode, foodCount);
+    return (
+        <View style={styles.ButtonListView}>
+            {isOpen && (
+                <TouchableOpacity style={styles.HiddenButton} onPress={() => handleCamera()}>
+                    <Ionicons name='barcode-outline' size={32} />
+                </TouchableOpacity>
+            )}
 
-            if (response.code === 200) {
-                Alert.alert('식품 추가 완료', response.message, [{ text: '확인' }]);
-                // 성공 후 입력값 초기화
-                setBarcode('');
-                setFoodCount('1');
-                setBarcodeModalVisible(false);
-                
-                // 메인화면의 식품 리스트 새로고침
-                if (refreshFoodList) {
-                    refreshFoodList();
-                }
-            } else {
-                Alert.alert('오류', response.message);
-            }
-        } catch (error: any) {
-            Alert.alert('오류', error.response?.data?.message || '식품 추가에 실패했습니다.');
-        } finally {
-            setIsAddingFood(false);
-        }
-    }
+            {/* 삭제: 메인 플로팅 메뉴에서 수동등록 버튼 제거 */}
 
-  // 선택된 식품들로 작업하는 함수 (FoodChat 실행)
-  const handleSelectedFoods = async () => {
-    if (selectedFoodIds.length < 2) {
-        Alert.alert('알림', '2개 이상의 식품을 선택해주세요.');
-        return;
-    }
+            {isOpen && (
+                <TouchableOpacity style={styles.HiddenButton} onPress={() => {
+                    setAiModalVisible(true);
+                    showFoodList(); // AI 모달 열 때 식품 리스트 새로고침
+                }}>
+                    <Ionicons name='chatbubble-outline' size={32} />
+                </TouchableOpacity>
+            )}
 
-    // FoodChat 함수 실행
-    await FoodChat(selectedFoodIds);
-    
-    // 성공적으로 실행 후 모달 닫고 선택 초기화
-    setAiModalVisible(false);
-    setSelectedFoodIds([]);
-  };
- 
-  return (
-    <View style={styles.ButtonListView}>
-        {isOpen && (
-            <TouchableOpacity style={styles.HiddenButton} onPress={() => handleCamera()}>
-                <Ionicons name='barcode-outline' size={32} />
+            <TouchableOpacity style={styles.ToggleButton} onPress={toggle}>
+                {isOpen ? <Ionicons name='close-outline' size={40} /> : <Ionicons name='add-outline' size={40} />}
             </TouchableOpacity>
-        )}
 
-        {isOpen && (
-            <TouchableOpacity style={styles.HiddenButton} onPress={() => setBarcodeModalVisible(true)}>
-                <Ionicons name='create-outline' size={32} />
-            </TouchableOpacity>
-        )}
-
-        {isOpen && (
-            <TouchableOpacity style={styles.HiddenButton} onPress={() => {
-                setAiModalVisible(true);
-                showFoodList(); // AI 모달 열 때 식품 리스트 새로고침
-            }}>
-                <Ionicons name='chatbubble-outline' size={32} />
-            </TouchableOpacity>
-        )}
-
-        <TouchableOpacity style={styles.ToggleButton} onPress={toggle}>
-            {isOpen ? <Ionicons name='close-outline' size={40} /> : <Ionicons name='add-outline' size={40} />}
-        </TouchableOpacity>
-      
-        <View>
-            <Modal
-                visible={AimodalVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setAiModalVisible(false)}
-            >
-                <View style={styles.ModalBackgroundShade}>
-                    <View style={styles.ModalBackground}>
-                        <View style={styles.modalHeader}>
-                            <TouchableOpacity onPress={() => {
-                                setAiModalVisible(false);
-                                setSelectedFoodIds([]); // 모달 닫을 때 선택 초기화
-                            }}> 
-                                <Ionicons name='arrow-back' size={24} />
-                            </TouchableOpacity>     
-                        </View>
-
-                        {/* 선택된 개수 표시 */}
-                        <View>
-                            <Text style={styles.selectedCountText}>
-                            선택된 식품: {selectedFoodIds.length}개
-                            </Text>
-                        </View>
-                    
-                        <ScrollView style={styles.scrollView}>
-                            {foodList.map((item) => (
-                                <FoodCard key={item.fid} item={item} />
-                            ))}
-                        </ScrollView>
-
-                        {/* 선택 완료 버튼 */}
-                        <TouchableOpacity 
-                            style={[
-                                styles.selectButton,
-                                selectedFoodIds.length < 2 && styles.selectButtonDisabled
-                            ]}
-                            onPress={selectedFoodIds.length > 1 ? handleSelectedFoods : undefined}
-                            disabled={selectedFoodIds.length < 2}
-                        >
-                            <Text style={[
-                                styles.ModalButtonText,
-                                selectedFoodIds.length < 2 && styles.ModalButtonTextDisabled
-                            ]}>
-                                {selectedFoodIds.length > 0 ? '레시피 추천' : '식품을 선택해주세요'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal
-                visible={BarcodemodalVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setBarcodeModalVisible(false)}
-            >
-                <View style={styles.ModalBackgroundShade}>
-                    <View style={styles.barcodeModalContent}>
-                        <View style={styles.modalHeader}>
-                            <TouchableOpacity onPress={() => setBarcodeModalVisible(false)}> 
-                                <Ionicons name='arrow-back' size={24}/>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* 타이틀 추가 */}
-                        <View style={styles.modalTitleContainer}>
-                            <Text style={styles.modalTitle}>식품 수동 등록</Text>
-                        </View>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="식품 바코드 번호"
-                            placeholderTextColor="#999"
-                            value={barcode ?? ''}
-                            onChangeText={setBarcode}
-                            keyboardType="number-pad"
-                            onSubmitEditing={() => {
-                                // 키보드 닫기
-                                Keyboard.dismiss();
-                            }}
-                            blurOnSubmit={true}
-                            returnKeyType="done"
-                        />
-
-                        <View style={styles.quantityContainer}>
-                            <Text style={styles.quantityLabel}>식품 수량</Text>
-                            <View style={styles.quantityControls}>
-                                <TouchableOpacity 
-                                    style={styles.quantityButton}
-                                    onPress={() => {
-                                        const current = parseInt(foodCount) || 1;
-                                        if (current > 1) {
-                                            setFoodCount(String(current - 1));
-                                        }
-                                    }}
-                                    disabled={isAddingFood}
-                                >
-                                    <Ionicons name="remove" size={20} color="#007aff" />
-                                </TouchableOpacity>
-                                
-                                <Text style={styles.quantityValue}>{foodCount}</Text>
-                                
-                                <TouchableOpacity 
-                                    style={styles.quantityButton}
-                                    onPress={() => {
-                                        const current = parseInt(foodCount) || 1;
-                                        if (current < 999) {
-                                            setFoodCount(String(current + 1));
-                                        }
-                                    }}
-                                    disabled={isAddingFood}
-                                >
-                                    <Ionicons name="add" size={20} color="#007aff" />
+            <View>
+                <Modal
+                    visible={AimodalVisible}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setAiModalVisible(false)}
+                >
+                    <View style={styles.ModalBackgroundShade}>
+                        <View style={styles.ModalBackground}>
+                            <View style={styles.modalHeader}>
+                                <TouchableOpacity onPress={() => {
+                                    setAiModalVisible(false);
+                                    setSelectedFoodIds([]); // 모달 닫을 때 선택 초기화
+                                }}>
+                                    <Ionicons name='arrow-back' size={24} />
                                 </TouchableOpacity>
                             </View>
-                        </View>
 
-                        <TouchableOpacity 
-                            style={[
-                                styles.ModalButton,
-                                isAddingFood && styles.ModalButtonDisabled
-                            ]} 
-                            onPress={AddFood}
-                            disabled={isAddingFood}
-                        >
-                            <Text style={[
-                                styles.ModalButtonText,
-                                isAddingFood && styles.ModalButtonTextDisabled
-                            ]}>
-                                {isAddingFood ? '추가 중...' : '식품 추가'}
-                            </Text>
-                        </TouchableOpacity>
+                            {/* 선택된 개수 표시 */}
+                            <View>
+                                <Text style={styles.selectedCountText}>
+                                    선택된 식품: {selectedFoodIds.length}개
+                                </Text>
+                            </View>
+
+                            <ScrollView style={styles.scrollView}>
+                                {foodList.map((item) => (
+                                    <FoodCard key={item.fid} item={item} />
+                                ))}
+                            </ScrollView>
+
+                            {/* 선택 완료 버튼 */}
+                            <TouchableOpacity
+                                style={[
+                                    styles.selectButton,
+                                    selectedFoodIds.length < 2 && styles.selectButtonDisabled
+                                ]}
+                                onPress={selectedFoodIds.length > 1 ? handleSelectedFoods : undefined}
+                                disabled={selectedFoodIds.length < 2}
+                            >
+                                <Text style={[
+                                    styles.ModalButtonText,
+                                    selectedFoodIds.length < 2 && styles.ModalButtonTextDisabled
+                                ]}>
+                                    {selectedFoodIds.length > 0 ? '레시피 추천' : '식품을 선택해주세요'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </View>
-            </Modal>
+                </Modal>
+
+                {/* 삭제: 메인에서 수동등록 모달 제거 */}
+            </View>
         </View>
-    </View>
-  );
+    );
 }
 
 export default MenuButtonAndModal;
@@ -455,7 +328,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         paddingTop: 100,
         paddingBottom: 80,
         paddingLeft: 40,
@@ -472,7 +345,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         paddingTop: 20,
 
-    shadowColor: '#000',
+        shadowColor: '#000',
         shadowOffset: {
             width: 0,
             height: 2,
@@ -573,7 +446,7 @@ const styles = StyleSheet.create({
         elevation: 5,
         maxHeight: '80%',
     },
-  addFoodButton: {
+    addFoodButton: {
         position: 'absolute',
         bottom: 20,
         left: 20,

@@ -2,7 +2,7 @@
   "expo": {
     "name": "SmileFood",
     "slug": "smilefood",
-    "version": "1.4.2",
+    "version": "1.5",
     "newArchEnabled": true,
     "jsEngine": "hermes",
     "web": {

@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Keyboard, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
 import { useAppContext } from '../contexts/AppContext';
 import { BorderRadius, Colors, FontSizes, GlobalStyles, ScreenStyles, Spacing } from '../styles/GlobalStyles';
@@ -20,6 +20,11 @@ export default function BarcodeScanScreen() {
   const [hasScanned, setHasScanned] = useState(false); // 스캔 완료 여부 추적
   const cameraRef = useRef<CameraView>(null);
   const scanLockRef = useRef<boolean>(false); // 동기 중복 방지 락
+  // 수동 등록 모달 상태
+  const [manualModalVisible, setManualModalVisible] = useState(false);
+  const [manualBarcode, setManualBarcode] = useState('');
+  const [manualCount, setManualCount] = useState('1');
+  const [manualAdding, setManualAdding] = useState(false);
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -31,13 +36,13 @@ export default function BarcodeScanScreen() {
     return (
       <SafeAreaWrapper backgroundColor="#FFF">
         {/* 뒤로가기 버튼 */}
-        <TouchableOpacity 
-          style={styles.backArrowButton} 
+        <TouchableOpacity
+          style={styles.backArrowButton}
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        
+
         <View style={GlobalStyles.centerContent}>
           <Text style={styles.message}>바코드를 스캔하려면 카메라 권한이 필요합니다.</Text>
           <View style={styles.permissionButtonContainer}>
@@ -65,6 +70,19 @@ export default function BarcodeScanScreen() {
     setScanEnabled(true);
   }
 
+  // 스캔 토글: 스캔 중이면 취소, 아니면 시작
+  function handleScanButtonPress() {
+    if (isProcessing) return;
+    if (scanEnabled) {
+      // 스캔 취소
+      setScanEnabled(false);
+      setHasScanned(false);
+      scanLockRef.current = false;
+      return;
+    }
+    enableBarcodeScanning();
+  }
+
   // 바코드 스캔 결과 처리 (자동 호출됨)
   async function onBarcodeScanned(scanningResult: any) {
     // 동기 중복 호출 즉시 차단
@@ -79,17 +97,17 @@ export default function BarcodeScanScreen() {
     }
     // 첫 유효 호출에서 바로 락 설정
     scanLockRef.current = true;
-    
+
     const barcodeData = scanningResult.data;
-    
+
     // 빈 바코드 데이터 체크
     if (!barcodeData || barcodeData.trim() === '') {
       console.log('빈 바코드 데이터 무시');
       return;
     }
-    
+
     console.log('바코드 인식됨:', barcodeData);
-    
+
     // 이번 스캔 처리 시작 (한 번 시작당 1개 등록)
     setHasScanned(true);
     setScanEnabled(false);
@@ -106,7 +124,7 @@ export default function BarcodeScanScreen() {
       }
 
       const response = await foodAPI.regiFood(sessionId, barcodeData, '1');
-      
+
       if (response.code === 200) {
         if (refreshFoodList) {
           await refreshFoodList();
@@ -137,75 +155,182 @@ export default function BarcodeScanScreen() {
   return (
     <SafeAreaWrapper backgroundColor="#000">
       {/* 뒤로가기 버튼 */}
-      <TouchableOpacity 
-        style={styles.backArrowButton} 
+      <TouchableOpacity
+        style={styles.backArrowButton}
         onPress={() => router.back()}
       >
-        <Ionicons name="arrow-back" size={24} color="#000" />
+        <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
-      
+
       <View style={ScreenStyles.cameraContainer}>
-        <CameraView 
+        <CameraView
           ref={cameraRef}
-          style={ScreenStyles.camera} 
-          facing={facing} 
+          style={ScreenStyles.camera}
+          facing={facing}
           barcodeScannerSettings={
             hasScanned || scanLockRef.current
               ? undefined // 스캔 완료 시 바코드 스캔 기능 완전 비활성화
-              : {barcodeTypes: ['qr', 'code128', 'ean13', 'ean8']}
+              : { barcodeTypes: ['code128', 'ean13', 'ean8'] }
           }
           onBarcodeScanned={hasScanned || scanLockRef.current ? undefined : onBarcodeScanned}
         />
-      
-      {/* 스캔 가이드라인 오버레이 */}
-      <View style={ScreenStyles.scanOverlay}>
-        <View style={ScreenStyles.scanArea}>
-        </View>
-        
-        {/* 로딩 인디케이터 */}
-        {isProcessing && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#00FF00" />
-          </View>
-        )}
-        
-        <Text style={ScreenStyles.instructionText}>
-          바코드를 카메라 중앙에 맞춰주세요.
-        </Text>
-        
-        {lastAddedBarcode && (
-          <Text style={styles.lastBarcodeText}>
-            마지막 추가: {lastAddedBarcode}
-          </Text>
-        )}
-      </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => router.back()}
-          disabled={isProcessing}
-        >
-          <Text style={styles.buttonText}>뒤로가기</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[
-            styles.button, 
-            scanEnabled ? styles.scanningButton : styles.captureButton,
-            isProcessing && styles.processingButton
-          ]} 
-          onPress={enableBarcodeScanning}
-          disabled={isProcessing || scanEnabled}
-        >
-          <Text style={styles.buttonText}>
-            {isProcessing ? '처리 중...' : scanEnabled ? '스캔 중...' : '스캔 시작'}
+        {/* 스캔 가이드라인 오버레이 */}
+        <View style={ScreenStyles.scanOverlay}>
+          <View style={ScreenStyles.scanArea}>
+          </View>
+
+          {/* 로딩 인디케이터 */}
+          {isProcessing && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#00FF00" />
+            </View>
+          )}
+
+          <Text style={ScreenStyles.instructionText}>
+            {scanEnabled ? '바코드를 카메라 중앙에 맞춰주세요...' : '스캔을 시작하려면 버튼을 눌러주세요.'}
           </Text>
+
+          {lastAddedBarcode && (
+            <Text style={styles.lastBarcodeText}>
+              마지막 추가: {lastAddedBarcode}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            disabled={isProcessing}
+          >
+            <Text style={styles.buttonText}>뒤로가기</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              scanEnabled ? styles.scanningButton : styles.captureButton,
+              isProcessing && styles.processingButton
+            ]}
+            onPress={handleScanButtonPress}
+            disabled={isProcessing}
+          >
+            <Text style={styles.buttonText}>
+              {isProcessing ? '처리 중...' : scanEnabled ? '스캔 중...' : '스캔 시작'}
+            </Text>
+          </TouchableOpacity>
+
+        </View>
+        {/* 하이퍼링크: 바코드 수동 등록 (상단 플로팅 버튼) */}
+        <TouchableOpacity
+          onPress={() => setManualModalVisible(true)}
+          disabled={isProcessing}
+          style={styles.manualLinkContainer}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.manualLinkText}>수동 등록</Text>
         </TouchableOpacity>
-        
-        
-        
-      </View>
+
+        {/* 수동 등록 모달 */}
+        <Modal
+          visible={manualModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setManualModalVisible(false)}
+        >
+          <View style={styles.modalShade}>
+            <View style={styles.manualModalContent}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setManualModalVisible(false)}>
+                  <Ionicons name='arrow-back' size={24} color="#000" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalTitleContainer}>
+                <Text style={styles.modalTitle}>식품 수동 등록</Text>
+              </View>
+
+              <TextInput
+                style={styles.input}
+                placeholder="식품 바코드 번호"
+                placeholderTextColor="#999"
+                value={manualBarcode}
+                onChangeText={setManualBarcode}
+                keyboardType="number-pad"
+                onSubmitEditing={() => Keyboard.dismiss()}
+                blurOnSubmit={true}
+                returnKeyType="done"
+              />
+
+              <View style={styles.quantityContainer}>
+                <Text style={styles.quantityLabel}>식품 수량</Text>
+                <View style={styles.quantityControls}>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => {
+                      const current = parseInt(manualCount) || 1;
+                      if (current > 1) setManualCount(String(current - 1));
+                    }}
+                    disabled={manualAdding}
+                  >
+                    <Ionicons name="remove" size={20} color="#007aff" />
+                  </TouchableOpacity>
+                  <Text style={styles.quantityValue}>{manualCount}</Text>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => {
+                      const current = parseInt(manualCount) || 1;
+                      if (current < 999) setManualCount(String(current + 1));
+                    }}
+                    disabled={manualAdding}
+                  >
+                    <Ionicons name="add" size={20} color="#007aff" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.modalPrimaryButton, manualAdding && styles.modalPrimaryButtonDisabled]}
+                onPress={async () => {
+                  if (!sessionId || manualBarcode.trim() === '') {
+                    Alert.alert('알림', '바코드를 입력해주세요.');
+                    return;
+                  }
+                  const count = parseInt(manualCount);
+                  if (!count || count < 1 || count > 999) {
+                    Alert.alert('알림', '식품 수량을 1~999 사이로 입력해주세요.');
+                    return;
+                  }
+                  try {
+                    setManualAdding(true);
+                    const response = await foodAPI.regiFood(sessionId, manualBarcode.trim(), manualCount);
+                    if (response.code === 200) {
+                      Alert.alert('식품 추가 완료', response.message, [{ text: '확인' }]);
+                      setManualBarcode('');
+                      setManualCount('1');
+                      setManualModalVisible(false);
+                      if (refreshFoodList) {
+                        refreshFoodList();
+                      }
+                    } else {
+                      Alert.alert('오류', response.message || '식품 추가에 실패했습니다.');
+                    }
+                  } catch (error: any) {
+                    Alert.alert('오류', error?.response?.data?.message || '식품 추가에 실패했습니다.');
+                  } finally {
+                    setManualAdding(false);
+                  }
+                }}
+                disabled={manualAdding}
+              >
+                <Text style={[styles.modalPrimaryButtonText, manualAdding && styles.modalPrimaryButtonTextDisabled]}>
+                  {manualAdding ? '추가 중...' : '식품 추가'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaWrapper>
   );
@@ -249,7 +374,7 @@ const styles = StyleSheet.create({
   // 버튼 컨테이너 및 버튼들
   buttonContainer: {
     position: 'absolute',
-    bottom: 64,
+    bottom: 48,
     flexDirection: 'row',
     backgroundColor: 'transparent',
     width: '100%',
@@ -307,8 +432,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   backArrowButton: {
+    backgroundColor: 'rgba(100, 100, 100, 0.5)',
+    borderRadius: 100,
     position: 'absolute',
-    top: 50,
+    top: 65,
     left: 20,
     zIndex: 1000,
     padding: 8,
@@ -365,5 +492,140 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 15,
     overflow: 'hidden',
+  },
+  manualLinkContainer: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: 'rgba(100, 100, 100, 0.5)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 100,
+  },
+  manualLinkText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalShade: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    paddingTop: 100,
+    paddingBottom: 80,
+    paddingLeft: 40,
+    paddingRight: 40,
+  },
+  manualModalContent: {
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+    backgroundColor: '#fff',
+    width: '100%',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3.84,
+    elevation: 5,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    padding: 20,
+    zIndex: 20,
+    borderRadius: 16,
+  },
+  modalTitleContainer: {
+    alignItems: 'center',
+    marginTop: 60,
+    marginBottom: 30,
+    paddingLeft: 20,
+    paddingRight: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    width: '100%',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    marginBottom: 20,
+    color: '#333',
+    minHeight: 50,
+  },
+  quantityContainer: {
+    marginBottom: 20,
+  },
+  quantityLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+  },
+  quantityButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#007aff',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quantityValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    minWidth: 60,
+    textAlign: 'center',
+  },
+  modalPrimaryButton: {
+    backgroundColor: '#007aff',
+    width: '100%',
+    borderRadius: 12,
+    paddingTop: 15,
+    paddingBottom: 15,
+    paddingLeft: 20,
+    paddingRight: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginTop: 20,
+  },
+  modalPrimaryButtonDisabled: {
+    backgroundColor: '#cccccc',
+    shadowOpacity: 0.05,
+    elevation: 2,
+  },
+  modalPrimaryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalPrimaryButtonTextDisabled: {
+    color: '#999999',
   },
 });
