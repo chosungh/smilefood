@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Text, TextInput, View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import '../utils/globalErrorHandler';
 import { AppProvider } from '../contexts/AppContext';
 
 export default function RootLayout() {
