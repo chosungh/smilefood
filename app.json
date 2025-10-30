@@ -3,6 +3,12 @@
     "name": "SmileFood",
     "slug": "smilefood",
     "version": "1.5",
+    "ios": {
+      "bundleIdentifier": "kr.szk.smilefood"
+    },
+    "android": {
+      "package": "kr.szk.smilefood"
+    },
     "newArchEnabled": true,
     "jsEngine": "hermes",
     "web": {
