@@ -2,7 +2,7 @@
   "expo": {
     "name": "SmileFood",
     "slug": "smilefood",
-    "version": "1.5",
+    "version": "1.5.1",
     "ios": {
       "bundleIdentifier": "kr.szk.smilefood",
       "infoPlist": {
@@ -12,7 +12,6 @@
     "android": {
       "package": "kr.szk.smilefood"
     },
-    "newArchEnabled": false,
     "jsEngine": "jsc",
     "web": {
       "bundler": "metro",
@@ -28,6 +27,9 @@
         "projectId": "12174b17-5664-47b9-af0c-8fd84dbe7ab3"
       }
     },
-    "owner": "leegeonhee"
+    "owner": "leegeonhee",
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }

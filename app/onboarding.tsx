@@ -130,6 +130,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacing.xl,
     maxWidth: width - 40,
+    marginBottom: Spacing.xxxxl,
   },
   indicatorContainer: {
     ...GlobalStyles.indicatorContainer,
