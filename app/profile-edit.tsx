@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '../services/api';
 import { ProfileEditStyles as styles } from '../styles/GlobalStyles';
@@ -62,7 +62,7 @@ export default function ProfileEditScreen() {
   };
 
   return (
-    <SafeAreaWrapper backgroundColor="#f8f9fa">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -172,6 +172,6 @@ export default function ProfileEditScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }

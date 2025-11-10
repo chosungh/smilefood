@@ -3,10 +3,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, DeviceEventEmitter, Dimensions, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
-import { FoodDetailStyles as styles } from '../styles/GlobalStyles';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { Alert, DeviceEventEmitter, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
+import { FoodDetailStyles as styles } from '../styles/GlobalStyles';
 
 type FoodItem = {
   barcode: string;
@@ -38,7 +38,7 @@ export default function FoodDetailScreen() {
     try {
       if (fid && sessionId) {
         const response = await foodAPI.getFoodInfo(sessionId, fid);
-        
+
         if (response.code === 200) {
           const foodInfo = response.data.food_info;
           setSelectedFood(foodInfo);
@@ -70,7 +70,7 @@ export default function FoodDetailScreen() {
             try {
               if (sessionId) {
                 const response = await foodAPI.deleteFood(sessionId, fid);
-                
+
                 if (response.code === 200) {
                   // 메인 화면에 즉시 반영하도록 이벤트 전송
                   DeviceEventEmitter.emit('food:deleted', { fid });
@@ -107,30 +107,30 @@ export default function FoodDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaWrapper backgroundColor="#f8f9fa">
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
         <View style={styles.loadingContainer}>
           <Text>불러오는 중...</Text>
         </View>
-      </SafeAreaWrapper>
+      </SafeAreaView>
     );
   }
 
   if (!selectedFood) {
     return (
-      <SafeAreaWrapper backgroundColor="#f8f9fa">
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
         <View style={styles.errorContainer}>
           <Text>식품 정보를 찾을 수 없습니다.</Text>
         </View>
-      </SafeAreaWrapper>
+      </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaWrapper backgroundColor="#f8f9fa">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -144,9 +144,9 @@ export default function FoodDetailScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
         <View style={styles.imageContainer}>
           {selectedFood.image_url ? (
-            <Image 
-              source={{ uri: selectedFood.image_url }} 
-              style={styles.foodImage} 
+            <Image
+              source={{ uri: selectedFood.image_url }}
+              style={styles.foodImage}
               contentFit="cover"
               transition={200}
               cachePolicy="memory-disk"
@@ -160,18 +160,18 @@ export default function FoodDetailScreen() {
 
         <View style={styles.infoContainer}>
           <Text style={styles.foodName}>{selectedFood.name}</Text>
-          
+
           <View style={styles.infoSection}>
             <View style={styles.infoItem}>
               <Text style={styles.infoTitle}>설명</Text>
               <Text style={styles.infoText}>{selectedFood.description}</Text>
             </View>
-            
+
             <View style={styles.infoItem}>
               <Text style={styles.infoTitle}>유형</Text>
               <Text style={styles.infoText}>{selectedFood.type}</Text>
             </View>
-            
+
             <View style={styles.infoItem}>
               <Text style={styles.infoTitle}>수량</Text>
               <Text style={styles.infoText}>{selectedFood.count}</Text>
@@ -181,32 +181,32 @@ export default function FoodDetailScreen() {
               <Text style={styles.infoTitle}>원재료명</Text>
               <Text style={styles.infoText}>{selectedFood.ingredients}</Text>
             </View>
-            
+
             <View style={styles.infoItem}>
               <Text style={styles.infoTitle}>소비기한</Text>
               <Text style={styles.infoText}>{selectedFood.expiration_date_desc}</Text>
             </View>
-            
+
             <View style={styles.infoItem}>
               <Text style={styles.infoTitle}>소비기한 만료 날짜</Text>
               <Text style={styles.infoText}>{selectedFood.expiration_date}</Text>
             </View>
-            
+
             <View style={styles.infoItem}>
               <Text style={styles.infoTitle}>중량</Text>
               <Text style={styles.infoText}>{selectedFood.volume}</Text>
             </View>
           </View>
 
-          <TouchableOpacity 
-            style={styles.deleteButton} 
+          <TouchableOpacity
+            style={styles.deleteButton}
             onPress={() => DeleteFood(selectedFood.fid)}
           >
             <Text style={styles.deleteButtonText}>삭제</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }
 

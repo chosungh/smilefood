@@ -4,7 +4,7 @@ import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
 import { BorderRadius, Colors, FontSizes, GlobalStyles, ScreenStyles, Spacing } from '../styles/GlobalStyles';
 
@@ -34,7 +34,7 @@ export default function BarcodeScanScreen() {
   if (!permission.granted) {
     // Camera permissions are not granted yet.
     return (
-      <SafeAreaWrapper backgroundColor="#FFF">
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF' }}>
         {/* 뒤로가기 버튼 */}
         <TouchableOpacity
           style={styles.backArrowButton}
@@ -54,7 +54,7 @@ export default function BarcodeScanScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </SafeAreaWrapper>
+      </SafeAreaView>
     );
   }
 
@@ -153,7 +153,7 @@ export default function BarcodeScanScreen() {
 
 
   return (
-    <SafeAreaWrapper backgroundColor="#000">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
       {/* 뒤로가기 버튼 */}
       <TouchableOpacity
         style={styles.backArrowButton}
@@ -332,7 +332,7 @@ export default function BarcodeScanScreen() {
           </View>
         </Modal>
       </View>
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }
 

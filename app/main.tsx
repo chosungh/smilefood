@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
 import { preloadImages } from '../utils/imageCache';
 import MenuButtonAndModal from './menuButtonAndModal';
@@ -52,7 +52,7 @@ export default function MainScreen() {
     const today = new Date();
     const diffTime = expirationDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return {
       ...apiFood,
       days_remaining: diffDays,
@@ -62,10 +62,10 @@ export default function MainScreen() {
   // 세션 체크 함수
   const checkSession = useCallback(async () => {
     if (!sessionId) return false;
-    
+
     try {
       const sessionResponse = await authAPI.getSessionInfo(sessionId);
-      
+
       if (sessionResponse.data.session_info.is_active === 0) {
         showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
         await setSessionId(null);
@@ -74,7 +74,7 @@ export default function MainScreen() {
         router.replace('/login');
         return false;
       }
-      
+
       return true;
     } catch (error: any) {
       console.warn('Session check error:', error?.response || error);
@@ -85,10 +85,10 @@ export default function MainScreen() {
   // 유저 정보 새로고침 함수
   const refreshUserInfo = useCallback(async () => {
     if (!sessionId) return;
-    
+
     try {
       const sessionResponse = await authAPI.getSessionInfo(sessionId);
-      
+
       if (sessionResponse.data.session_info.is_active === 0) {
         showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
         await setSessionId(null);
@@ -97,7 +97,7 @@ export default function MainScreen() {
         router.replace('/login');
         return;
       }
-      
+
       const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
       setUserInfo(userResponse.data.user_info);
     } catch (error: any) {
@@ -116,7 +116,7 @@ export default function MainScreen() {
           setRefreshing(false);
           return;
         }
-        
+
         const response = await foodAPI.getFoodList(sessionId);
         if (response.code === 200) {
           // 활성화된 아이템만 필터링하여 변환
@@ -192,7 +192,7 @@ export default function MainScreen() {
   const memoizedFoodList = useMemo(() => {
     return [...foodList].sort((a, b) => a.days_remaining - b.days_remaining);
   }, [foodList]);
-  
+
   // FoodCard 컴포넌트를 메모이제이션하여 불필요한 리렌더링 방지
   const renderFoodCard = useCallback(({ item, isLast }: { item: FoodItem, isLast?: boolean }) => {
     return (
@@ -220,7 +220,7 @@ export default function MainScreen() {
           // 세션 체크
           const isSessionValid = await checkSession();
           if (!isSessionValid) return;
-          
+
           // 유저 정보 가져오기 (세션 정보를 통해 uid 추출)
           const sessionResponse = await authAPI.getSessionInfo(sessionId);
           const userResponse = await authAPI.getUserInfo(sessionResponse.data.session_info.uid);
@@ -238,13 +238,13 @@ export default function MainScreen() {
               const imageUrls = activeFoodList
                 .map(food => food.image_url)
                 .filter(url => url && url.trim() !== '');
-                preloadImages(imageUrls);
+              preloadImages(imageUrls);
             }
           } catch (error: any) {
             console.warn('Food list load error:', error?.response || error);
             // Alert.alert('오류', error.response?.data?.message || '식품 목록을 불러오는 중 오류가 발생했습니다.');
           }
-          
+
           initialLoadDone.current = true;
         } catch (error: any) {
           console.warn('Initial load error:', error?.response || error);
@@ -263,7 +263,7 @@ export default function MainScreen() {
       // 세션 체크
       const isSessionValid = await checkSession();
       if (!isSessionValid) return;
-      
+
       // 유저 정보 새로고침
       await refreshUserInfo();
     }, 5000);
@@ -288,7 +288,7 @@ export default function MainScreen() {
             // 세션 체크
             const isSessionValid = await checkSession();
             if (!isSessionValid) return;
-            
+
             const foodResponse = await foodAPI.getFoodList(sessionId);
             if (foodResponse.code === 200) {
               // 활성화된 아이템만 필터링하여 변환
@@ -300,7 +300,7 @@ export default function MainScreen() {
             console.warn('Error refreshing food list:', error);
           }
         };
-        
+
         refreshFoodList();
       }
     }, [sessionId, transformFoodItem, setFoodList, checkSession])
@@ -310,7 +310,7 @@ export default function MainScreen() {
   const FoodCard = React.memo(({ item, isLast, onPress, onLongPress, showCheckbox, selected }: { item: FoodItem, isLast?: boolean, onPress: (item: FoodItem) => void, onLongPress: (item: FoodItem) => void, showCheckbox?: boolean, selected?: boolean }) => {
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
-    
+
     const handleImageLoad = () => {
       setImageLoading(false);
       setImageError(false);
@@ -320,9 +320,9 @@ export default function MainScreen() {
       setImageLoading(false);
       setImageError(true);
     };
-    
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[
           styles.FoodListView,
           isLast && styles.FoodListLastView
@@ -333,9 +333,9 @@ export default function MainScreen() {
       >
         <View style={styles.imageContainer}>
           {item.image_url && !imageError ? (
-            <Image 
-              source={{ uri: item.image_url }} 
-              style={styles.FoodListViewImg} 
+            <Image
+              source={{ uri: item.image_url }}
+              style={styles.FoodListViewImg}
               contentFit="cover"
               transition={200}
               onLoad={handleImageLoad}
@@ -374,11 +374,11 @@ export default function MainScreen() {
       </TouchableOpacity>
     );
   });
-  
+
   FoodCard.displayName = 'FoodCard';
 
   return (
-    <SafeAreaWrapper backgroundColor="#f8f9fa">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       {/* Header */}
       <View style={styles.header}>
@@ -398,8 +398,8 @@ export default function MainScreen() {
         <View style={styles.profileHeader}>
           <View style={[styles.avatar, userInfo?.profile_url && { backgroundColor: '#ffffff' }]}>
             {userInfo?.profile_url ? (
-              <Image 
-                source={{ uri: userInfo.profile_url }} 
+              <Image
+                source={{ uri: userInfo.profile_url }}
                 style={styles.avatarImage}
                 contentFit="cover"
                 transition={200}
@@ -488,7 +488,7 @@ export default function MainScreen() {
           }
         >
           {memoizedFoodList.length > 0 ? (
-            memoizedFoodList.map((item, index) => 
+            memoizedFoodList.map((item, index) =>
               renderFoodCard({ item, isLast: index === memoizedFoodList.length - 1 })
             )
           ) : (
@@ -500,7 +500,7 @@ export default function MainScreen() {
       </View>
 
       <MenuButtonAndModal />
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }
 
@@ -527,13 +527,13 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   FoodListViewImg: {
-    width: (Dimensions.get('window').height / 10)-20,
+    width: (Dimensions.get('window').height / 10) - 20,
     aspectRatio: 1,
     borderRadius: 6,
   },
   placeholderImage: {
-    width: (Dimensions.get('window').height / 10)-20,
-    height: (Dimensions.get('window').height / 10)-20,
+    width: (Dimensions.get('window').height / 10) - 20,
+    height: (Dimensions.get('window').height / 10) - 20,
     borderRadius: 6,
     backgroundColor: '#f8f9fa',
     justifyContent: 'center',
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
   },
   MainFoodListView: {
     backgroundColor: '#fff',
-    height: Dimensions.get('window').height/1.5,
+    height: Dimensions.get('window').height / 1.5,
     margin: 20,
     borderRadius: 16,
     padding: 20,

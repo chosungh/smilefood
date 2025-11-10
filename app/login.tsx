@@ -12,7 +12,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '../services/api';
 
@@ -81,7 +81,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaWrapper backgroundColor="#fff">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
@@ -154,7 +154,7 @@ export default function LoginScreen() {
       </KeyboardAvoidingView>
 
       
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }
 

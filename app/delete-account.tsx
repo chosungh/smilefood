@@ -3,14 +3,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Alert,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  Alert
+  View
 } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
 
 export default function DeleteAccountScreen() {
@@ -41,10 +41,10 @@ export default function DeleteAccountScreen() {
             setIsLoading(true);
             try {
               const response = await authAPI.deleteAccount(userInfo.email, password);
-              
+
               // 성공 시 로그아웃 처리
               clearNavigationStack();
-              
+
               Alert.alert(
                 '탈퇴 완료',
                 response.message,
@@ -54,7 +54,7 @@ export default function DeleteAccountScreen() {
                     onPress: () => {
                       // 네비게이션 스택을 완전히 정리하고 로그인 화면으로 이동
                       router.replace('/login');
-                      
+
                       // 추가로 네비게이션 스택을 정리
                       setTimeout(() => {
                         router.replace('/login');
@@ -87,7 +87,7 @@ export default function DeleteAccountScreen() {
   };
 
   return (
-    <SafeAreaWrapper style={styles.container} backgroundColor="#f8f9fa">
+    <SafeAreaView>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleCancel}>
@@ -111,7 +111,7 @@ export default function DeleteAccountScreen() {
             autoCorrect={false}
           />
         </View>
-        
+
         <View style={styles.warningContainer}>
           <Text style={styles.warningText}>
             회원탈퇴를 진행하면 모든 데이터가 영구적으로 삭제되며, 복구할 수 없습니다.
@@ -123,12 +123,12 @@ export default function DeleteAccountScreen() {
             style={[styles.button, styles.deleteButton]}
             onPress={handleDeleteAccount}
             disabled={isLoading}
-            >
+          >
             <Text style={styles.deleteButtonText}>
               {isLoading ? '처리중...' : '탈퇴하기'}
             </Text>
           </TouchableOpacity>
-            
+
           <TouchableOpacity
             style={[styles.button, styles.cancelButton]}
             onPress={handleCancel}
@@ -138,7 +138,7 @@ export default function DeleteAccountScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }
 
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1a1a1a',
     position: 'absolute',

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '../services/api';
 import { ChangePasswordStyles as styles } from '../styles/GlobalStyles';
@@ -44,7 +44,7 @@ export default function ChangePasswordScreen() {
   };
 
   return (
-    <SafeAreaWrapper backgroundColor="#f8f9fa">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -114,7 +114,7 @@ export default function ChangePasswordScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }
 

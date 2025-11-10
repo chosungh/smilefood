@@ -1,18 +1,18 @@
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
-    Dimensions,
-    Image,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
-import { Colors, GlobalStyles, ScreenStyles, Spacing } from '../styles/GlobalStyles';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
+import { Colors, GlobalStyles, ScreenStyles, Spacing } from '../styles/GlobalStyles';
 // SmileFoodLogo 대신 통일된 아이콘 이미지를 사용합니다
 
 const { width, height } = Dimensions.get('window');
@@ -64,7 +64,7 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaWrapper backgroundColor={Colors.white}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <ScrollView
         ref={scrollViewRef}
@@ -114,7 +114,7 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         )}
       </View>
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }
 

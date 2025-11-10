@@ -2,7 +2,7 @@ import { authAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
 import { SettingsStyles as styles } from '../styles/GlobalStyles';
 
@@ -82,7 +82,7 @@ export default function SettingsScreen() {
 
 
   return (
-    <SafeAreaWrapper backgroundColor="#f8f9fa">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -150,6 +150,6 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }

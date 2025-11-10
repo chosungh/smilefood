@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
 import { authAPI } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -156,7 +156,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaWrapper backgroundColor="#fff">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
@@ -308,7 +308,7 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }
 

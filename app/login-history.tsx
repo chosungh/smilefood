@@ -2,7 +2,7 @@ import { authAPI } from '@/services/api';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaWrapper } from '../components/SafeAreaWrapper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../contexts/AppContext';
 import { LoginHistoryStyles as styles } from '../styles/GlobalStyles';
 
@@ -131,7 +131,7 @@ export default function LoginHistoryScreen() {
 
   if (loading) {
     return (
-      <SafeAreaWrapper backgroundColor="#f8f9fa">
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={styles.backButton}>←</Text>
@@ -144,12 +144,12 @@ export default function LoginHistoryScreen() {
           <ActivityIndicator size="large" color="#007AFF" />
           <Text style={styles.loadingText}>로그인 기록을 불러오는 중...</Text>
         </View>
-      </SafeAreaWrapper>
+      </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaWrapper backgroundColor="#f8f9fa">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -182,7 +182,7 @@ export default function LoginHistoryScreen() {
           />
         )}
       </View>
-    </SafeAreaWrapper>
+    </SafeAreaView>
   );
 }
 
