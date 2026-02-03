@@ -1,12 +1,20 @@
+import { useAppContext } from '@/contexts/AppContext';
 import { foodAPI } from '@/services/api';
+import { FoodDetailStyles as styles } from '@/styles/GlobalStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, DeviceEventEmitter, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '@/contexts/AppContext';
-import { FoodDetailStyles as styles } from '@/styles/GlobalStyles';
 
 type FoodItem = {
   barcode: string;
@@ -24,6 +32,20 @@ type FoodItem = {
   uid: string;
   volume: string;
   is_active: number;
+};
+
+// 날짜 포맷팅 헬퍼
+const formatDate = (dateString: string) => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  // 유효하지 않은 날짜 처리
+  if (isNaN(date.getTime())) return dateString;
+
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 };
 
 export default function FoodDetailScreen() {
@@ -47,6 +69,7 @@ export default function FoodDetailScreen() {
         }
       }
     } catch (error: any) {
+      // 404 등 예측 가능한 에러는 조용히 처리하거나 적절한 메시지 표시
       Alert.alert('오류', error.response?.data?.message || '식품 정보를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -54,15 +77,12 @@ export default function FoodDetailScreen() {
   };
 
   // 식품 삭제
-  const DeleteFood = async (fid: string) => {
+  const deleteFood = async (fid: string) => {
     Alert.alert(
       '식품 삭제',
       '해당 식품을 삭제하시겠습니까?',
       [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
+        { text: '취소', style: 'cancel' },
         {
           text: '삭제',
           style: 'destructive',
@@ -72,19 +92,15 @@ export default function FoodDetailScreen() {
                 const response = await foodAPI.deleteFood(sessionId, fid);
 
                 if (response.code === 200) {
-                  // 메인 화면에 즉시 반영하도록 이벤트 전송
-                  DeviceEventEmitter.emit('food:deleted', { fid });
-
-                  // 서버 데이터 동기화를 위해 새로고침 호출 (있을 경우)
+                  // 서버 데이터 동기화를 위해 새로고침 호출
                   if (refreshFoodList) {
                     await refreshFoodList();
                   }
 
-                  // 상세 화면 닫기
-                  router.back();
-
-                  // 안내 표시
-                  Alert.alert('삭제 완료', '식품이 삭제되었습니다.');
+                  // 삭제 완료 알림 후 뒤로가기
+                  Alert.alert('삭제 완료', '식품이 삭제되었습니다.', [
+                    { text: '확인', onPress: () => router.back() }
+                  ]);
                 } else {
                   Alert.alert('오류', '식품 삭제에 실패했습니다.');
                 }
@@ -107,11 +123,10 @@ export default function FoodDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa', justifyContent: 'center', alignItems: 'center' }}>
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-        <View style={styles.loadingContainer}>
-          <Text>불러오는 중...</Text>
-        </View>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={{ marginTop: 10, color: '#666' }}>불러오는 중...</Text>
       </SafeAreaView>
     );
   }
@@ -120,8 +135,14 @@ export default function FoodDetailScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        {/* Header (에러 상태에서도 뒤로가기는 필요함) */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
         <View style={styles.errorContainer}>
-          <Text>식품 정보를 찾을 수 없습니다.</Text>
+          <Text style={{ fontSize: 16, color: '#666' }}>식품 정보를 찾을 수 없습니다.</Text>
         </View>
       </SafeAreaView>
     );
@@ -141,7 +162,11 @@ export default function FoodDetailScreen() {
       </View>
 
       {/* 식품 상세정보 */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+      >
         <View style={styles.imageContainer}>
           {selectedFood.image_url ? (
             <Image
@@ -174,7 +199,7 @@ export default function FoodDetailScreen() {
 
             <View style={styles.infoItem}>
               <Text style={styles.infoTitle}>수량</Text>
-              <Text style={styles.infoText}>{selectedFood.count}</Text>
+              <Text style={styles.infoText}>{selectedFood.count}개</Text>
             </View>
 
             <View style={styles.infoItem}>
@@ -183,13 +208,13 @@ export default function FoodDetailScreen() {
             </View>
 
             <View style={styles.infoItem}>
-              <Text style={styles.infoTitle}>소비기한</Text>
+              <Text style={styles.infoTitle}>소비기한 정보</Text>
               <Text style={styles.infoText}>{selectedFood.expiration_date_desc}</Text>
             </View>
 
             <View style={styles.infoItem}>
-              <Text style={styles.infoTitle}>소비기한 만료 날짜</Text>
-              <Text style={styles.infoText}>{selectedFood.expiration_date}</Text>
+              <Text style={styles.infoTitle}>만료일</Text>
+              <Text style={styles.infoText}>{formatDate(selectedFood.expiration_date)}</Text>
             </View>
 
             <View style={styles.infoItem}>
@@ -200,7 +225,7 @@ export default function FoodDetailScreen() {
 
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={() => DeleteFood(selectedFood.fid)}
+            onPress={() => deleteFood(selectedFood.fid)}
           >
             <Text style={styles.deleteButtonText}>삭제</Text>
           </TouchableOpacity>
@@ -209,4 +234,3 @@ export default function FoodDetailScreen() {
     </SafeAreaView>
   );
 }
-
