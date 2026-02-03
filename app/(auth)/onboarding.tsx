@@ -11,8 +11,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { Colors, GlobalStyles, ScreenStyles, Spacing } from '../styles/GlobalStyles';
+import { useAppContext } from '@/contexts/AppContext';
+import { Colors, GlobalStyles, ScreenStyles, Spacing } from '@/styles/GlobalStyles';
 // SmileFoodLogo 대신 통일된 아이콘 이미지를 사용합니다
 
 const { width, height } = Dimensions.get('window');
@@ -21,17 +21,17 @@ const onboardingData = [
   {
     title: '스마일푸드에 \n 오신 것을 환영합니다',
     description: '제품을 촬영하고 관리해보세요.',
-    image: require('../assets/images/icon.png'),
+    image: require('@/assets/images/icon.png'),
   },
   {
     title: '간편한 음식 관리',
     description: '바코드를 찍으면 유통기한을 관리해드립니다.',
-    image: require('../assets/images/icon.png'),
+    image: require('@/assets/images/icon.png'),
   },
   {
     title: '건강한 식습관 관리',
     description: '레시피 추천도 받아보세요.',
-    image: require('../assets/images/icon.png'),
+    image: require('@/assets/images/icon.png'),
   },
 ];
 

@@ -4,8 +4,8 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useAppContext } from '../contexts/AppContext';
-import { preloadImages } from '../utils/imageCache';
+import { useAppContext } from '@/contexts/AppContext';
+import { preloadImages } from '@/utils/imageCache';
 
 
 type FoodItem = {

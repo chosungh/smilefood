@@ -3,9 +3,9 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { authAPI } from '../services/api';
-import { ChangePasswordStyles as styles } from '../styles/GlobalStyles';
+import { useAppContext } from '@/contexts/AppContext';
+import { authAPI } from '@/services/api';
+import { ChangePasswordStyles as styles } from '@/styles/GlobalStyles';
 
 export default function ChangePasswordScreen() {
   const router = useRouter();

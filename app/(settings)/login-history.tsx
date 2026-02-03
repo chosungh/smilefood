@@ -3,8 +3,8 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { LoginHistoryStyles as styles } from '../styles/GlobalStyles';
+import { useAppContext } from '@/contexts/AppContext';
+import { LoginHistoryStyles as styles } from '@/styles/GlobalStyles';
 
 interface SessionInfo {
   created_at: string;

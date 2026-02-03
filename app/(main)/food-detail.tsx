@@ -5,8 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, DeviceEventEmitter, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { FoodDetailStyles as styles } from '../styles/GlobalStyles';
+import { useAppContext } from '@/contexts/AppContext';
+import { FoodDetailStyles as styles } from '@/styles/GlobalStyles';
 
 type FoodItem = {
   barcode: string;

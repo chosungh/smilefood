@@ -1,53 +1,68 @@
+import { FoodItem } from '@/services/api';
 import { Image } from 'expo-image';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { FoodItem } from '../services/api';
+import React, { memo, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface FoodItemProps {
   food: FoodItem;
   onPress?: () => void;
 }
 
-export const FoodItemComponent: React.FC<FoodItemProps> = ({ food, onPress }) => {
-  const { loading: imageLoading, error: imageError, handleLoad, handleError } = useImageLoading();
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+};
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-  };
+const getExpirationStatus = (expirationDate: string) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // 시간 정보를 제거하여 날짜만 비교
 
-  const getExpirationStatus = (expirationDate: string) => {
-    const today = new Date();
-    const expiration = new Date(expirationDate);
-    const diffTime = expiration.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const expiration = new Date(expirationDate);
+  expiration.setHours(0, 0, 0, 0);
 
-    if (diffDays < 0) {
-      return { status: 'expired', color: '#FF3B30', text: '소비기한 만료' };
-    } else if (diffDays <= 7) {
-      return { status: 'warning', color: '#FF9500', text: `${diffDays}일 남음` };
-    } else {
-      return { status: 'good', color: '#34C759', text: `${diffDays}일 남음` };
-    }
+  const diffTime = expiration.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { status: 'expired', color: '#FF3B30', text: '소비기한 만료' };
+  } else if (diffDays <= 3) {
+    return { status: 'warning', color: '#FF9500', text: `${diffDays}일 남음` };
+  } else if (diffDays <= 7) {
+    return { status: 'warning', color: '#FFcc00', text: `${diffDays}일 남음` };
+  } else {
+    return { status: 'good', color: '#34C759', text: `${diffDays}일 남음` };
+  }
+};
+
+export const FoodItemComponent: React.FC<FoodItemProps> = memo(({ food, onPress }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  const handleLoadStart = () => setLoading(true);
+  const handleLoad = () => setLoading(false);
+  const handleError = () => {
+    setLoading(false);
+    setError(true);
   };
 
   const expirationStatus = getExpirationStatus(food.expiration_date);
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
+    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.imageContainer}>
-        {food.image_url && !imageError ? (
-          <Image 
-            source={{ uri: food.image_url }} 
-            style={styles.image} 
+        {food.image_url && !error ? (
+          <Image
+            source={{ uri: food.image_url }}
+            style={styles.image}
             contentFit="cover"
             transition={200}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
+            onLoadStart={handleLoadStart}
+            onLoad={handleLoad}
+            onError={handleError}
             cachePolicy="memory-disk"
           />
         ) : (
@@ -55,13 +70,13 @@ export const FoodItemComponent: React.FC<FoodItemProps> = ({ food, onPress }) =>
             <Text style={styles.placeholderText}>📦</Text>
           </View>
         )}
-        {imageLoading && food.image_url && (
+        {loading && food.image_url && !error && (
           <View style={styles.loadingOverlay}>
-            <View style={styles.loadingSpinner} />
+            <ActivityIndicator size="small" color="#007AFF" />
           </View>
         )}
       </View>
-      
+
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.name} numberOfLines={1}>{food.name}</Text>
@@ -69,14 +84,14 @@ export const FoodItemComponent: React.FC<FoodItemProps> = ({ food, onPress }) =>
             <Text style={styles.countText}>{food.count}</Text>
           </View>
         </View>
-        
+
         <Text style={styles.description} numberOfLines={1}>{food.description}</Text>
-        
+
         <View style={styles.details}>
           <Text style={styles.type}>{food.type}</Text>
           <Text style={styles.volume}>{food.volume}</Text>
         </View>
-        
+
         <View style={styles.expirationContainer}>
           <View style={[styles.expirationBadge, { backgroundColor: expirationStatus.color }]}>
             <Text style={styles.expirationText}>{expirationStatus.text}</Text>
@@ -88,7 +103,7 @@ export const FoodItemComponent: React.FC<FoodItemProps> = ({ food, onPress }) =>
       </View>
     </TouchableOpacity>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -136,15 +151,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
-  },
-  loadingSpinner: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    borderTopColor: 'transparent',
-    borderRadius: 10,
-    animation: 'spin 1s linear infinite',
   },
   content: {
     flex: 1,

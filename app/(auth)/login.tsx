@@ -13,8 +13,8 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { authAPI } from '../services/api';
+import { useAppContext } from '@/contexts/AppContext';
+import { authAPI } from '@/services/api';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');

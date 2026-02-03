@@ -12,8 +12,8 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { ChatInfo, foodAPI, FoodItem } from '../services/api';
+import { useAppContext } from '@/contexts/AppContext';
+import { ChatInfo, foodAPI, FoodItem } from '@/services/api';
 
 export default function ChatDetailScreen() {
   const { sessionId } = useAppContext();

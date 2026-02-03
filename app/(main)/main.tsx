@@ -1,4 +1,7 @@
+import MenuButtonAndModal from '@/components/MenuButtonAndModal';
+import { useAppContext } from '@/contexts/AppContext';
 import { authAPI, foodAPI } from '@/services/api';
+import { preloadImages } from '@/utils/imageCache';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -15,9 +18,6 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { preloadImages } from '../utils/imageCache';
-import MenuButtonAndModal from './menuButtonAndModal';
 
 type FoodItem = {
   barcode: string;

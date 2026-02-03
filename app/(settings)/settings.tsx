@@ -3,8 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { SettingsStyles as styles } from '../styles/GlobalStyles';
+import { useAppContext } from '@/contexts/AppContext';
+import { SettingsStyles as styles } from '@/styles/GlobalStyles';
 
 
 export default function SettingsScreen() {

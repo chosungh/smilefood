@@ -14,8 +14,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { authAPI } from '../services/api';
+import { useAppContext } from '@/contexts/AppContext';
+import { authAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
