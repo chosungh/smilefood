@@ -6,6 +6,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Text, TextInput, View } from 'react-native';
+import '../global.css';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
