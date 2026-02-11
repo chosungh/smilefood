@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Button from '@/components/Button';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '@/contexts/AppContext';
 import { Colors, GlobalStyles, ScreenStyles, Spacing } from '@/styles/GlobalStyles';
@@ -105,13 +106,9 @@ export default function OnboardingScreen() {
       {/* 버튼 */}
       <View style={styles.buttonContainer}>
         {currentIndex < onboardingData.length - 1 ? (
-          <TouchableOpacity style={GlobalStyles.primaryButton} onPress={handleNext}>
-            <Text style={GlobalStyles.primaryButtonText}>다음</Text>
-          </TouchableOpacity>
+          <Button title="다음" onPress={handleNext} />
         ) : (
-          <TouchableOpacity style={GlobalStyles.primaryButton} onPress={handleFinish}>
-            <Text style={GlobalStyles.primaryButtonText}>시작하기</Text>
-          </TouchableOpacity>
+          <Button title="시작하기" onPress={handleFinish} />
         )}
       </View>
     </SafeAreaView>

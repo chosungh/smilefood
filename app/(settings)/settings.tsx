@@ -1,9 +1,9 @@
+import Header from '@/components/Header';
 import SettingSection from '@/components/SettingSection';
 import { useAppContext } from '@/contexts/AppContext';
 import { authAPI } from '@/services/api';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SETTINGS_LINKS = {
@@ -79,18 +79,12 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 py-4">
-        <TouchableOpacity
-          className="p-2"
-          onPress={() => router.back()}
-          accessibilityLabel="뒤로 가기"
-          accessibilityRole="button"
-        >
-          <Ionicons name="arrow-back" size={24} color={THEME_COLOR} />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900">설정</Text>
-        <View className="w-10" />
-      </View>
+      <Header
+        title="설정"
+        showBack={true}
+        showChat={false}
+        showSettings={false}
+      />
 
       {/* Settings Content */}
       <View className="flex-1 pt-5">

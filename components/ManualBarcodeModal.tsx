@@ -4,13 +4,15 @@ import React, { useState } from 'react';
 import {
     Alert,
     Keyboard,
+    KeyboardAvoidingView,
     Modal,
-    StyleSheet,
+    Platform,
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
+import Button from './Button';
 
 interface ManualBarcodeModalProps {
     visible: boolean;
@@ -75,194 +77,67 @@ export const ManualBarcodeModal: React.FC<ManualBarcodeModalProps> = ({
             animationType="fade"
             onRequestClose={handleClose}
         >
-            <View style={styles.modalShade}>
-                <View style={styles.manualModalContent}>
-                    <View style={styles.modalHeader}>
-                        <TouchableOpacity onPress={handleClose}>
-                            <Ionicons name='arrow-back' size={24} color="#000" />
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.modalTitleContainer}>
-                        <Text style={styles.modalTitle}>식품 수동 등록</Text>
-                    </View>
-
-                    <TextInput
-                        style={styles.input}
-                        placeholder="식품 바코드 번호"
-                        placeholderTextColor="#999"
-                        value={manualBarcode}
-                        onChangeText={setManualBarcode}
-                        keyboardType="number-pad"
-                        onSubmitEditing={() => Keyboard.dismiss()}
-                        blurOnSubmit={true}
-                        returnKeyType="done"
-                    />
-
-                    <View style={styles.quantityContainer}>
-                        <Text style={styles.quantityLabel}>식품 수량</Text>
-                        <View style={styles.quantityControls}>
-                            <TouchableOpacity
-                                style={styles.quantityButton}
-                                onPress={() => {
-                                    const current = parseInt(manualCount, 10) || 1;
-                                    if (current > 1) setManualCount(String(current - 1));
-                                }}
-                                disabled={manualAdding}
-                            >
-                                <Ionicons name="remove" size={20} color="#007aff" />
-                            </TouchableOpacity>
-                            <Text style={styles.quantityValue}>{manualCount}</Text>
-                            <TouchableOpacity
-                                style={styles.quantityButton}
-                                onPress={() => {
-                                    const current = parseInt(manualCount, 10) || 1;
-                                    if (current < 999) setManualCount(String(current + 1));
-                                }}
-                                disabled={manualAdding}
-                            >
-                                <Ionicons name="add" size={20} color="#007aff" />
+            <View className="flex-1 items-center justify-center bg-black/50 px-10 py-20">
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    className="w-full"
+                >
+                    <View className="w-full bg-white rounded-2xl p-5 shadow-lg shadow-black/20 max-h-[80%] items-stretch justify-start" style={{ elevation: 5 }}>
+                        <View className="absolute top-0 left-0 w-full p-5 z-20 rounded-2xl">
+                            <TouchableOpacity onPress={handleClose} accessibilityLabel="뒤로 가기">
+                                <Ionicons name='arrow-back' size={24} color="#000" />
                             </TouchableOpacity>
                         </View>
-                    </View>
 
-                    <TouchableOpacity
-                        style={[styles.modalPrimaryButton, manualAdding && styles.modalPrimaryButtonDisabled]}
-                        onPress={handleAddFood}
-                        disabled={manualAdding}
-                    >
-                        <Text style={[styles.modalPrimaryButtonText, manualAdding && styles.modalPrimaryButtonTextDisabled]}>
-                            {manualAdding ? '추가 중...' : '식품 추가'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                        <View className="items-center mt-12 mb-7 px-5">
+                            <Text className="text-2xl font-bold text-gray-800 text-center w-full">식품 수동 등록</Text>
+                        </View>
+
+                        <TextInput
+                            className="border border-gray-200 rounded-xl px-4 py-3 text-lg bg-white mb-5 text-gray-800 min-h-[50]"
+                            placeholder="식품 바코드 번호"
+                            placeholderTextColor="#999"
+                            value={manualBarcode}
+                            onChangeText={setManualBarcode}
+                            keyboardType="number-pad"
+                            onSubmitEditing={() => Keyboard.dismiss()}
+                            blurOnSubmit={true}
+                            returnKeyType="done"
+                            accessibilityLabel="식품 바코드 번호 입력"
+                        />
+
+                        <View className="mb-5">
+                            <Text className="text-base font-semibold text-gray-800 mb-2.5">식품 수량</Text>
+                            <View className="flex-row items-center justify-center gap-5">
+                                <TouchableOpacity
+                                    className="w-10 h-10 rounded-full border-2 border-blue-500 bg-white items-center justify-center active:opacity-70"
+                                    onPress={() => {
+                                        const current = parseInt(manualCount, 10) || 1;
+                                        if (current > 1) setManualCount(String(current - 1));
+                                    }}
+                                    disabled={manualAdding}
+                                    accessibilityLabel="수량 감소"
+                                >
+                                    <Ionicons name="remove" size={20} color="#007aff" />
+                                </TouchableOpacity>
+                                <Text className="text-2xl font-bold text-gray-800 min-w-[60] text-center">{manualCount}</Text>
+                                <TouchableOpacity
+                                    className="w-10 h-10 rounded-full border-2 border-blue-500 bg-white items-center justify-center active:opacity-70"
+                                    onPress={() => {
+                                        const current = parseInt(manualCount, 10) || 1;
+                                        if (current < 999) setManualCount(String(current + 1));
+                                    }}
+                                    disabled={manualAdding}
+                                    accessibilityLabel="수량 증가"
+                                >
+                                    <Ionicons name="add" size={20} color="#007aff" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                        <Button title="식품 추가" onPress={handleAddFood} isLoading={manualAdding} disabled={manualAdding} />
+                    </View>
+                </KeyboardAvoidingView>
             </View>
         </Modal>
     );
 };
-
-const styles = StyleSheet.create({
-    modalShade: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // 반투명 배경을 좀 더 진하게 조정
-        paddingTop: 100,
-        paddingBottom: 80,
-        paddingLeft: 40,
-        paddingRight: 40,
-    },
-    manualModalContent: {
-        alignItems: 'stretch',
-        justifyContent: 'flex-start',
-        backgroundColor: '#fff',
-        width: '100%',
-        borderRadius: 16,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3.84,
-        elevation: 5,
-        // maxHeight 제거하고 flex를 사용하여 내용에 맞게 조정하도록 변경 가능하나, 
-        // 키보드가 올라올 때를 대비해 원래 스타일 유지
-        maxHeight: '80%',
-    },
-    modalHeader: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        padding: 20,
-        zIndex: 20,
-        borderRadius: 16,
-    },
-    modalTitleContainer: {
-        alignItems: 'center',
-        marginTop: 60,
-        marginBottom: 30,
-        paddingLeft: 20,
-        paddingRight: 20,
-    },
-    modalTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
-        textAlign: 'center',
-        width: '100%',
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        fontSize: 16,
-        backgroundColor: '#fff',
-        marginBottom: 20,
-        color: '#333',
-        minHeight: 50,
-    },
-    quantityContainer: {
-        marginBottom: 20,
-    },
-    quantityLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 10,
-    },
-    quantityControls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 20,
-    },
-    quantityButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        borderWidth: 2,
-        borderColor: '#007aff',
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    quantityValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
-        minWidth: 60,
-        textAlign: 'center',
-    },
-    modalPrimaryButton: {
-        backgroundColor: '#007aff',
-        width: '100%',
-        borderRadius: 12,
-        paddingTop: 15,
-        paddingBottom: 15,
-        paddingLeft: 20,
-        paddingRight: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
-        marginTop: 20,
-    },
-    modalPrimaryButtonDisabled: {
-        backgroundColor: '#cccccc',
-        shadowOpacity: 0.05,
-        elevation: 2,
-    },
-    modalPrimaryButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    modalPrimaryButtonTextDisabled: {
-        color: '#999999',
-    },
-});

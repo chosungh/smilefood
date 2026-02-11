@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import Header from '@/components/Header';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '@/contexts/AppContext';
 import { ChatInfo, foodAPI, FoodItem } from '@/services/api';
@@ -240,12 +241,12 @@ export default function ChatListScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>레시피 추천 내역</Text>
-      </View>
+      <Header
+        title="레시피 추천 내역"
+        showBack={true}
+        showChat={false}
+        showSettings={false}
+      />
       
       <FlatList
         data={chatList}

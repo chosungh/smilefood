@@ -1,17 +1,18 @@
+import Header from '@/components/Header';
+import { useAppContext } from '@/contexts/AppContext';
+import { authAPI } from '@/services/api';
+import { ProfileEditStyles as styles } from '@/styles/GlobalStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '@/contexts/AppContext';
-import { authAPI } from '@/services/api';
-import { ProfileEditStyles as styles } from '@/styles/GlobalStyles';
 
 export default function ProfileEditScreen() {
   const router = useRouter();
   const { userInfo, sessionId, setUserInfo } = useAppContext();
-  
+
   const [name, setName] = useState(userInfo?.name || '');
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [imageUrl, setImageUrl] = useState(userInfo?.profile_url || '');
@@ -23,7 +24,7 @@ export default function ProfileEditScreen() {
 
   const handleConfirmImage = async () => {
     setImageModalVisible(false);
-    
+
     handleSaveProfile();
   };
 
@@ -42,12 +43,12 @@ export default function ProfileEditScreen() {
         name: trimmed,
         profile_image_url: imageUrl
       };
-      
+
       console.log('프로필 업데이트 요청:', { name: trimmed, profile_image_url: imageUrl });
-      
+
       const response = await authAPI.updateProfile(sessionId, params);
       console.log('프로필 업데이트 응답:', response);
-      
+
       // 서버 응답에서 업데이트된 정보 확인
       if (response && response.code === 200) {
         setUserInfo(userInfo ? { ...userInfo, name: trimmed, profile_url: imageUrl } : userInfo);
@@ -64,13 +65,12 @@ export default function ProfileEditScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>프로필 편집</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <Header
+        title="프로필 편집"
+        showBack={true}
+        showChat={false}
+        showSettings={false}
+      />
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -79,8 +79,8 @@ export default function ProfileEditScreen() {
           <View style={styles.avatarContainer}>
             <TouchableOpacity onPress={openImageModal} activeOpacity={0.7}>
               {(imageUrl || userInfo?.profile_url) ? (
-                <Image 
-                  source={{ uri: (imageUrl || userInfo?.profile_url) as string }} 
+                <Image
+                  source={{ uri: (imageUrl || userInfo?.profile_url) as string }}
                   style={styles.avatar}
                   contentFit="cover"
                   transition={200}
@@ -126,9 +126,9 @@ export default function ProfileEditScreen() {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>이메일</Text>
-              <Text style={styles.readOnlyText}>
-                {userInfo?.email || '-'}
-              </Text>
+            <Text style={styles.readOnlyText}>
+              {userInfo?.email || '-'}
+            </Text>
           </View>
 
           <View style={styles.inputGroup}>

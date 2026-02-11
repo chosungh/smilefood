@@ -1,3 +1,6 @@
+import Button from '@/components/Button';
+import { authAPI } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -7,37 +10,44 @@ import {
   Platform,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '@/contexts/AppContext';
-import { authAPI } from '@/services/api';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
+  const router = useRouter();
+
+  // Inputs Refs
+  const emailInputRef = useRef<TextInput>(null);
+  const verificationInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
+  const nameInputRef = useRef<TextInput>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Form State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
+
+  // Verification State
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showVerificationInput, setShowVerificationInput] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [timer, setTimer] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
+
+  // UI State
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [isPrivacyPolicyAgreed, setIsPrivacyPolicyAgreed] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const router = useRouter();
-  const { } = useAppContext();
 
   useEffect(() => {
     if (isTimerActive && timer > 0) {
       timerRef.current = setTimeout(() => {
-        setTimer(timer - 1);
+        setTimer((prev) => prev - 1);
       }, 1000);
     } else if (timer === 0 && isTimerActive) {
       setIsTimerActive(false);
@@ -50,9 +60,35 @@ export default function RegisterScreen() {
     };
   }, [timer, isTimerActive]);
 
+  // Focus verification input when it shows up
+  useEffect(() => {
+    if (showVerificationInput && !isEmailVerified) {
+      // Small timeout to ensure the view is rendered
+      setTimeout(() => {
+        verificationInputRef.current?.focus();
+      }, 100);
+    }
+  }, [showVerificationInput, isEmailVerified]);
+
   const startTimer = () => {
     setTimer(60);
     setIsTimerActive(true);
+  };
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (isEmailVerified || showVerificationInput) {
+      setIsEmailVerified(false);
+      setShowVerificationInput(false);
+      setIsTimerActive(false);
+      setTimer(0);
+      setVerificationCode('');
+    }
   };
 
   const handleSendVerificationCode = async () => {
@@ -61,12 +97,17 @@ export default function RegisterScreen() {
       return;
     }
 
+    if (!validateEmail(email)) {
+      setError('올바른 이메일 형식이 아닙니다.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await authAPI.sendEmailVerificationCode(email);
-      
+
       if (response.code === 200) {
         setShowVerificationInput(true);
         startTimer();
@@ -90,13 +131,16 @@ export default function RegisterScreen() {
 
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await authAPI.verifyEmailCode(email, verificationCode);
-      
+
       if (response.code === 200) {
         setIsEmailVerified(true);
+        setShowVerificationInput(false); // Hide input on success to clean up UI
         Alert.alert('성공', response.message);
+        // Automatically focus password input after verification
+        setTimeout(() => passwordInputRef.current?.focus(), 100);
       } else {
         const errorMessage = response.message || '인증 코드가 일치하지 않습니다.';
         setError(errorMessage);
@@ -134,10 +178,10 @@ export default function RegisterScreen() {
 
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await authAPI.register(email, password, name);
-      
+
       if (response.code === 200) {
         Alert.alert('회원가입 완료', response.message, [
           {
@@ -156,67 +200,68 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView className='flex-1 bg-white'>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <KeyboardAvoidingView
-        style={styles.keyboardContainer}
+        className='flex-1'
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContainer}
+        <ScrollView
+          className='flex-1'
+          contentContainerClassName='flex-grow px-6 pt-10 pb-5'
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <View style={styles.header}>
-            <Text style={styles.title}>회원가입</Text>
-            <Text style={styles.subtitle}>새로운 계정을 만들어보세요</Text>
+          <View className='items-center mb-8'>
+            <Text className='text-3xl font-bold text-[#333] mb-2'>회원가입</Text>
+            <Text className='text-base text-[#666]'>새로운 계정을 만들어보세요</Text>
           </View>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>이메일</Text>
-              <View style={styles.emailContainer}>
+          <View className='w-full'>
+            <View className='mb-5'>
+              <Text className='text-base font-semibold text-[#333] mb-2'>이메일</Text>
+              <View className='flex-row items-center'>
                 <TextInput
-                  style={[styles.input, styles.emailInput]}
+                  ref={emailInputRef}
+                  className={`flex-1 mr-3 border rounded-xl px-4 py-3 text-base text-black bg-[#f9f9f9] ${isEmailVerified ? 'border-[#007AFF] bg-[#f0f9ff]' : 'border-[#ddd]'}`}
                   placeholder="예시) me@example.com"
                   placeholderTextColor="#999"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={handleEmailChange}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
                   returnKeyType="next"
-                  editable={!isEmailVerified}
+                  onSubmitEditing={() => {
+                    if (isEmailVerified) {
+                      passwordInputRef.current?.focus();
+                    }
+                  }}
+                  blurOnSubmit={false}
                 />
-                <TouchableOpacity
-                  style={[
-                    styles.verifyButton, 
-                    (isEmailVerified || isTimerActive || isLoading) && styles.disabledButton
-                  ]}
+                <Button
+                  title={isEmailVerified
+                    ? '인증완료'
+                    : isTimerActive
+                      ? `재발송(${timer}s)`
+                      : '인증'}
                   onPress={handleSendVerificationCode}
                   disabled={isEmailVerified || isTimerActive || isLoading}
-                >
-                  <Text style={styles.verifyButtonText}>
-                    {isEmailVerified 
-                      ? '인증완료' 
-                      : isTimerActive 
-                        ? `재발송(${timer}s)` 
-                        : '인증'
-                    }
-                  </Text>
-                </TouchableOpacity>
+                  className={`rounded-lg ${isEmailVerified ? 'bg-[#4cd964]' : ''}`}
+                  textClassName="text-sm"
+                />
               </View>
             </View>
-            
+
             {showVerificationInput && !isEmailVerified && (
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>인증 코드</Text>
-                <View style={styles.verificationContainer}>
+              <View className='mb-5'>
+                <Text className='text-base font-semibold text-[#333] mb-2'>인증 코드</Text>
+                <View className='flex-row items-center'>
                   <TextInput
-                    style={[styles.input, styles.verificationInput]}
+                    ref={verificationInputRef}
+                    className='flex-1 mr-3 border border-[#ddd] rounded-xl px-4 py-3 text-base text-black bg-[#f9f9f9]'
                     placeholder="6자리 인증 코드를 입력하세요"
                     placeholderTextColor="#999"
                     value={verificationCode}
@@ -227,21 +272,22 @@ export default function RegisterScreen() {
                     autoCapitalize="none"
                     onSubmitEditing={handleVerifyCode}
                   />
-                  <TouchableOpacity
-                    style={styles.verifyCodeButton}
+                  <Button
+                    title="확인"
                     onPress={handleVerifyCode}
                     disabled={isLoading}
-                  >
-                    <Text style={styles.verifyCodeButtonText}>확인</Text>
-                  </TouchableOpacity>
+                    className="rounded-lg"
+                    textClassName="text-sm"
+                  />
                 </View>
               </View>
             )}
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>비밀번호</Text>
+            <View className='mb-5'>
+              <Text className='text-base font-semibold text-[#333] mb-2'>비밀번호</Text>
               <TextInput
-                style={styles.input}
+                ref={passwordInputRef}
+                className='border border-[#ddd] rounded-xl px-4 py-3 text-base text-black bg-[#f9f9f9]'
                 placeholder="비밀번호를 입력해주세요."
                 placeholderTextColor="#999"
                 value={password}
@@ -249,13 +295,16 @@ export default function RegisterScreen() {
                 secureTextEntry
                 autoCapitalize="none"
                 returnKeyType="next"
+                onSubmitEditing={() => nameInputRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>이름</Text>
+            <View className='mb-5'>
+              <Text className='text-base font-semibold text-[#333] mb-2'>이름</Text>
               <TextInput
-                style={styles.input}
+                ref={nameInputRef}
+                className='border border-[#ddd] rounded-xl px-4 py-3 text-base text-black bg-[#f9f9f9]'
                 placeholder="이름을 입력해주세요."
                 placeholderTextColor="#999"
                 value={name}
@@ -266,44 +315,38 @@ export default function RegisterScreen() {
               />
             </View>
 
-            <View style={styles.privacyContainer}>
+            <View className='mb-5'>
               <TouchableOpacity
-                style={styles.checkboxContainer}
+                className='flex-row items-center'
                 onPress={() => setIsPrivacyPolicyAgreed(!isPrivacyPolicyAgreed)}
               >
-                <View style={[styles.checkbox, isPrivacyPolicyAgreed && styles.checkedBox]}>
+                <View className={`w-5 h-5 border-2 rounded mr-3 items-center justify-center ${isPrivacyPolicyAgreed ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-white border-[#ddd]'}`}>
                   {isPrivacyPolicyAgreed && <Ionicons name="checkmark-sharp" size={16} color="#fff" />}
                 </View>
-                <Text style={styles.privacyText}>
-                  <Text style={styles.privacyTextNormal}>개인정보처리방침에 </Text>
-                  <Text style={styles.privacyTextLink} onPress={handlePrivacyPolicyPress}>
+                <Text className='flex-1 text-sm leading-5'>
+                  <Text className='text-[#333]'>개인정보처리방침에 </Text>
+                  <Text className='text-[#007AFF] underline' onPress={handlePrivacyPolicyPress}>
                     동의
                   </Text>
-                  <Text style={styles.privacyTextNormal}>합니다</Text>
+                  <Text className='text-[#333]'>합니다</Text>
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            {error ? <Text className='text-[#ff3b30] text-sm mb-4 text-center'>{error}</Text> : null}
 
-            <TouchableOpacity
-              style={[
-                styles.registerButton,
-                (!isEmailVerified || !isPrivacyPolicyAgreed || isLoading) && styles.disabledButton,
-              ]}
+            <Button
+              title={isLoading ? '처리 중...' : '회원가입'}
               onPress={handleRegister}
               disabled={!isEmailVerified || !isPrivacyPolicyAgreed || isLoading}
-            >
-              <Text style={styles.registerButtonText}>
-                {isLoading ? '처리 중...' : '회원가입'}
-              </Text>
-            </TouchableOpacity>
+              className="mt-6 py-2"
+            />
 
             <TouchableOpacity
-              style={styles.backButton}
+              className='items-center mt-4'
               onPress={() => router.back()}
             >
-              <Text style={styles.backButtonText}>로그인으로 돌아가기</Text>
+              <Text className='text-[#007AFF] text-base'>로그인으로 돌아가기</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -311,163 +354,3 @@ export default function RegisterScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 20,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  form: {
-    width: '100%',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#000',
-    backgroundColor: '#f9f9f9',
-  },
-  emailContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  emailInput: {
-    flex: 1,
-    marginRight: 12,
-  },
-  verifyButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  verifiedButton: {
-    backgroundColor: '#34C759',
-  },
-  verifyButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  verificationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  verificationInput: {
-    flex: 1,
-    marginRight: 12,
-  },
-  verifyCodeButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  verifyCodeButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  privacyContainer: {
-    marginBottom: 20,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    borderRadius: 4,
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  checkedBox: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  checkmark: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  privacyText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  privacyTextNormal: {
-    color: '#333',
-  },
-  privacyTextLink: {
-    color: '#007AFF',
-    textDecorationLine: 'underline',
-  },
-  errorText: {
-    color: '#ff3b30',
-    fontSize: 14,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  registerButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
-  registerButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  backButton: {
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  backButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-});

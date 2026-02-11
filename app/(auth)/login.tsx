@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import Button from '@/components/Button';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '@/contexts/AppContext';
 import { authAPI } from '@/services/api';
@@ -131,15 +132,7 @@ export default function LoginScreen() {
               />
             </View>
 
-            <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.disabledButton]}
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              <Text style={styles.loginButtonText}>
-                {isLoading ? '로그인 중...' : '로그인'}
-              </Text>
-            </TouchableOpacity>
+            <Button title="로그인" onPress={handleLogin} isLoading={isLoading} disabled={isLoading} />
 
             <View style={styles.linkContainer}>
               <TouchableOpacity onPress={handleFindPassword}>

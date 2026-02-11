@@ -5,6 +5,8 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Text, Tex
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '@/contexts/AppContext';
 import { authAPI } from '@/services/api';
+import Header from '@/components/Header';
+import Button from '@/components/Button';
 import { ChangePasswordStyles as styles } from '@/styles/GlobalStyles';
 
 export default function ChangePasswordScreen() {
@@ -46,13 +48,12 @@ export default function ChangePasswordScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>비밀번호 변경</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <Header
+        title="비밀번호 변경"
+        showBack={true}
+        showChat={false}
+        showSettings={false}
+      />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -104,13 +105,11 @@ export default function ChangePasswordScreen() {
               />
             </View>
 
-            <TouchableOpacity
-              style={[styles.submitButton, (!canSubmit || submitting) && styles.submitButtonDisabled]}
+            <Button
+              title="변경하기"
               onPress={handleSubmit}
               disabled={!canSubmit}
-            >
-              <Text style={styles.submitButtonText}>{submitting ? '변경 중...' : '변경하기'}</Text>
-            </TouchableOpacity>
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
