@@ -1,10 +1,10 @@
+import Button from '@/components/Button';
 import { useAppContext } from '@/contexts/AppContext';
 import { FoodItem, foodAPI } from '@/services/api';
-import { preloadImages } from '@/utils/imageCache';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -16,7 +16,6 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native';
-import Button from './Button';
 
 // --- FoodCard 컴포넌트 (외부 분리로 불필요한 리마운트 방지) ---
 
@@ -103,14 +102,18 @@ const FoodCard = React.memo(({ item, isSelected, cardHeight, onToggle }: FoodCar
 
 // --- MenuButtonAndModal 메인 컴포넌트 ---
 
-const MenuButtonAndModal = () => {
+interface MenuButtonAndModalProps {
+    foodList: FoodItem[];
+}
+
+const MenuButtonAndModal = ({ foodList }: MenuButtonAndModalProps) => {
     const router = useRouter();
     const { height: windowHeight } = useWindowDimensions();
     const { sessionId } = useAppContext();
 
     const [aiModalVisible, setAiModalVisible] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    const [foodList, setFoodList] = useState<FoodItem[]>([]);
+    // const [foodList, setFoodList] = useState<FoodItem[]>([]); // Removed internal state
     const [selectedFoodIds, setSelectedFoodIds] = useState<string[]>([]);
     const [isRequesting, setIsRequesting] = useState(false);
 
@@ -119,31 +122,7 @@ const MenuButtonAndModal = () => {
 
     const cardHeight = windowHeight / 10;
 
-    // 식품 목록 조회
-    const fetchFoodList = useCallback(async () => {
-        try {
-            if (!sessionId) return;
-
-            const response = await foodAPI.getFoodList(sessionId);
-            if (response.code === 200) {
-                const activeFoodList = response.data.food_list.filter(
-                    (food) => food.is_active === 1
-                );
-                setFoodList(activeFoodList);
-
-                const imageUrls = activeFoodList
-                    .map((food) => food.image_url)
-                    .filter((url) => url && url.trim() !== '');
-                preloadImages(imageUrls);
-            }
-        } catch (error) {
-            console.error('식품 목록 조회 실패:', error);
-        }
-    }, [sessionId]);
-
-    useEffect(() => {
-        fetchFoodList();
-    }, [fetchFoodList]);
+    // 식품 목록 조회 로직 제거 (부모로부터 props로 받음)
 
     // 바코드 스캔 화면 이동
     const handleCamera = () => {
@@ -245,7 +224,7 @@ const MenuButtonAndModal = () => {
     // 모달 열기/닫기
     const openModal = () => {
         setAiModalVisible(true);
-        fetchFoodList();
+        // fetchFoodList(); // Removed redundant fetch
     };
 
     const closeModal = () => {

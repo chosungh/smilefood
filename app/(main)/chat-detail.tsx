@@ -38,17 +38,24 @@ export default function ChatDetailScreen() {
 
     let timeoutId: NodeJS.Timeout | null = null;
     let isMounted = true;
+    const appState = React.useRef(AppState.currentState);
+    const chatStatusRef = React.useRef<string>('creating'); // Track status to know if we should resume
 
     const pollChatStatus = async () => {
+      // If unmounted or backgrounded, stop polling
+      if (!isMounted || appState.current.match(/inactive|background/)) return;
+
       try {
         const response = await foodAPI.getFoodChatStatus(sessionId, fcid);
         if (!isMounted) return;
 
         if (response.code === 200) {
+          const status = response.data.chat_info.status;
           setChatInfo(response.data.chat_info);
+          chatStatusRef.current = status;
 
           // 상태가 completed일 때만 음식 정보를 가져옴 (불필요한 반복 호출 방지)
-          if (response.data.chat_info.status === 'completed' && response.data.food_ids.length > 0) {
+          if (status === 'completed' && response.data.food_ids.length > 0) {
             const foodListResponse = await foodAPI.getFoodList(sessionId);
             if (isMounted && foodListResponse.code === 200) {
               const selectedFoods = foodListResponse.data.food_list.filter(
@@ -59,7 +66,7 @@ export default function ChatDetailScreen() {
           }
 
           // 상태가 completed나 failed가 아니면 1초 후 다시 폴링
-          if (response.data.chat_info.status !== 'completed' && response.data.chat_info.status !== 'failed') {
+          if (status !== 'completed' && status !== 'failed') {
             timeoutId = setTimeout(pollChatStatus, 1000);
           } else {
             if (isMounted) setLoading(false);
@@ -78,12 +85,27 @@ export default function ChatDetailScreen() {
       }
     };
 
+    // Initial polling
     pollChatStatus();
+
+    // AppState Listener
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      appState.current = nextAppState;
+      if (nextAppState === 'active') {
+        // Resume polling if we come back to foreground and not finished
+        if (chatStatusRef.current !== 'completed' && chatStatusRef.current !== 'failed') {
+          // Cancel previous timeout just in case (though it should have stopped)
+          if (timeoutId) clearTimeout(timeoutId);
+          pollChatStatus();
+        }
+      }
+    });
 
     // cleanup: 언마운트 시 타이머 정리 및 state 업데이트 방지
     return () => {
       isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
+      subscription.remove();
     };
   }, [sessionId, fcid]);
 
@@ -163,7 +185,7 @@ export default function ChatDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#f5f5f5]">
       {/* Header 컴포넌트 적용 */}
-      
+
       <Header
         title="레시피 상세"
         showBack={true}

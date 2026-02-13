@@ -6,7 +6,9 @@
     "ios": {
       "bundleIdentifier": "kr.szk.smilefood",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "프로필 사진을 촬영하기 위해 카메라 접근 권한이 필요합니다.",
+        "NSPhotoLibraryUsageDescription": "프로필 사진을 선택하기 위해 사진 라이브러리 접근 권한이 필요합니다."
       }
     },
     "android": {
@@ -29,7 +31,14 @@
     },
     "owner": "leegeonhee",
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "프로필 사진을 촬영하기 위해 카메라 접근 권한이 필요합니다.",
+          "photosPermission": "프로필 사진을 선택하기 위해 사진 라이브러리 접근 권한이 필요합니다."
+        }
+      ]
     ]
   }
 }

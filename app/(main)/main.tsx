@@ -20,7 +20,7 @@
  */
 import { FoodItemComponent } from '@/components/FoodItem';
 import Header from '@/components/Header';
-import MenuButtonAndModal from '@/components/MenuButtonAndModal';
+import MenuButtonAndModal from '@/components/features/MenuButtonAndModal';
 import { useAppContext } from '@/contexts/AppContext';
 import { FoodItem as ApiFoodItem, authAPI, foodAPI } from '@/services/api';
 import { preloadImages } from '@/utils/imageCache';
@@ -111,6 +111,7 @@ export default function MainScreen() {
         setFoodList(transformedFoodList);
 
         const imageUrls = activeFoodList
+          .slice(0, 20) // Limit preloading to first 20 items to avoid memory spike
           .map((food) => food.image_url)
           .filter((url) => url && url.trim() !== '');
         preloadImages(imageUrls);
@@ -274,7 +275,7 @@ export default function MainScreen() {
                 <Image
                   source={{ uri: userInfo.profile_url }}
                   className="w-16 h-16 rounded-full"
-                  style={{ width: 64, height: 64 }}
+                  style={{ width: 64, height: 64, borderRadius: 32 }}
                   contentFit="cover"
                   transition={200}
                   cachePolicy="none"
@@ -318,6 +319,10 @@ export default function MainScreen() {
           renderItem={renderItem}
           keyExtractor={item => item.fid}
           contentContainerStyle={{ paddingBottom: 20 }}
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          removeClippedSubviews={true}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -337,7 +342,7 @@ export default function MainScreen() {
         />
       </View>
 
-      <MenuButtonAndModal />
+      <MenuButtonAndModal foodList={memoizedFoodList} />
     </SafeAreaView>
   );
 }
