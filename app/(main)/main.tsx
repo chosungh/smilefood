@@ -47,8 +47,7 @@ type FoodItem = ApiFoodItem & {
 
 export default function MainScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo, setRefreshFoodList, showAlert } = useAppContext();
-  const [foodList, setFoodList] = useState<FoodItem[]>([]);
+  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo, setRefreshFoodList, showAlert, foodList, setFoodList } = useAppContext();
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = useRef(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
