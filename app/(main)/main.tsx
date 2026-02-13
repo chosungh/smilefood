@@ -35,6 +35,7 @@ import {
   RefreshControl,
   StatusBar,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -53,6 +54,9 @@ export default function MainScreen() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedFids, setSelectedFids] = useState<string[]>([]);
   const appState = useRef(AppState.currentState);
+
+  const [searchText, setSearchText] = useState('');
+  const [sortType, setSortType] = useState<'expiry' | 'name' | 'created'>('expiry');
 
   const transformFoodItem = useCallback((apiFood: ApiFoodItem): FoodItem => {
     const expirationDate = new Date(apiFood.expiration_date);
@@ -169,9 +173,39 @@ export default function MainScreen() {
     );
   }, [sessionId, selectedFids, fetchFoodList]);
 
+  const handleSortPress = useCallback(() => {
+    Alert.alert(
+      '정렬 기준 선택',
+      undefined,
+      [
+        { text: '유통기한 임박순', onPress: () => setSortType('expiry') },
+        { text: '이름순 (가나다)', onPress: () => setSortType('name') },
+        { text: '최신 등록순', onPress: () => setSortType('created') },
+        { text: '취소', style: 'cancel' }
+      ]
+    );
+  }, []);
+
   const memoizedFoodList = useMemo(() => {
-    return [...foodList].sort((a, b) => a.days_remaining - b.days_remaining);
-  }, [foodList]);
+    let filtered = [...foodList];
+
+    if (searchText) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    return filtered.sort((a, b) => {
+      if (sortType === 'expiry') {
+        return a.days_remaining - b.days_remaining;
+      } else if (sortType === 'name') {
+        return a.name.localeCompare(b.name, 'ko');
+      } else if (sortType === 'created') {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      return 0;
+    });
+  }, [foodList, searchText, sortType]);
 
   const renderItem = useCallback(({ item }: { item: FoodItem }) => {
     const isSelected = selectedFids.includes(item.fid);
@@ -186,7 +220,7 @@ export default function MainScreen() {
         />
         {isSelectionMode && (
           <View
-            className={`absolute inset-0 rounded-xl justify-center items-end pr-5 ${isSelected ? 'bg-blue-500/10 border-2 border-blue-500' : 'bg-white/50'}`}
+            className={`absolute inset-0 rounded-xl justify-center items-end pr-5 ${isSelected ? 'bg-blue-500/10 border border-blue-500' : 'bg-white/50'}`}
             pointerEvents="none"
           >
             <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${isSelected ? 'bg-blue-500 border-blue-500' : 'bg-white border-gray-300'}`}>
@@ -244,10 +278,11 @@ export default function MainScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
+
       {isSelectionMode ? (
-        <View className="flex-row justify-between items-center px-5 py-4 bg-white border-b border-gray-200">
+        <View className="flex-row justify-between items-center px-5 py-4">
           <TouchableOpacity onPress={() => { setIsSelectionMode(false); setSelectedFids([]); }}>
-            <Text className="text-gray-600 text-lg">취소</Text>
+            <Text className="text-gray-600 text-lg font-bold">취소</Text>
           </TouchableOpacity>
           <Text className="text-lg font-bold">{selectedFids.length}개 선택됨</Text>
           <TouchableOpacity
@@ -295,6 +330,32 @@ export default function MainScreen() {
 
       {/* Food List Area */}
       <View className="flex-1 bg-white mx-5 mt-5 mb-1 rounded-2xl p-2.5" style={{ elevation: 3 }}>
+
+        {/* Search and Sort Header */}
+        <View className="flex-row items-center mb-3 px-2 pt-2 gap-2">
+          <View className="flex-1 flex-row items-center bg-gray-50 rounded-xl px-3 h-11 border border-gray-200">
+            <Ionicons name="search" size={20} color="#9CA3AF" />
+            <TextInput
+              className="flex-1 ml-2 text-base text-gray-800"
+              placeholder="식품명 검색"
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholderTextColor="#9CA3AF"
+              returnKeyType="search"
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchText('')}>
+                <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity
+            onPress={handleSortPress}
+            className={`w-11 h-11 rounded-xl items-center justify-center border ${sortType !== 'expiry' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}
+          >
+            <Ionicons name="filter" size={20} color={sortType !== 'expiry' ? '#007AFF' : '#6B7280'} />
+          </TouchableOpacity>
+        </View>
 
         {/* Selection Actions inside list - removed because I moved actions to Header which is standard */}
         {isSelectionMode && (

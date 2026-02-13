@@ -10,6 +10,9 @@ interface HeaderProps {
     showBack?: boolean;
     onBackPress?: () => void;
     rightComponent?: React.ReactNode;
+    leftComponent?: React.ReactNode;
+    centerComponent?: React.ReactNode;
+    className?: string;
 }
 
 export default function Header({
@@ -19,6 +22,9 @@ export default function Header({
     showBack = false,
     onBackPress,
     rightComponent,
+    leftComponent,
+    centerComponent,
+    className,
 }: HeaderProps) {
     const router = useRouter();
 
@@ -31,15 +37,23 @@ export default function Header({
     };
 
     return (
-        <View className="flex-row justify-between items-center px-5 py-4 bg-gray-50/0">
+        <View className={`flex-row justify-between items-center px-5 py-4 bg-gray-50/0 ${className || ''}`}>
             <View className="flex-row items-center gap-2">
-                {showBack && (
-                    <TouchableOpacity onPress={handleBack} className="mr-1 p-1">
-                        <Ionicons name="arrow-back" size={24} color="#1f2937" />
-                    </TouchableOpacity>
+                {leftComponent ? (
+                    leftComponent
+                ) : (
+                    <>
+                        {showBack && (
+                            <TouchableOpacity onPress={handleBack} className="mr-1 p-1">
+                                <Ionicons name="arrow-back" size={24} color="#1f2937" />
+                            </TouchableOpacity>
+                        )}
+                        <Text className="text-2xl font-bold text-gray-800">{title}</Text>
+                    </>
                 )}
-                <Text className="text-2xl font-bold text-gray-800">{title}</Text>
             </View>
+
+            {centerComponent}
 
             <View className="flex-row items-center gap-3">
                 {showChat && (
