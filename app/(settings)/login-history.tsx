@@ -135,7 +135,7 @@ export default function LoginHistoryScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView className="flex-1 bg-[#F2F4F6]">
         <Header
           title="로그인 기록"
           showBack={true}
@@ -152,7 +152,7 @@ export default function LoginHistoryScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-[#F2F4F6]">
       {/* Header */}
       <Header
         title="로그인 기록"

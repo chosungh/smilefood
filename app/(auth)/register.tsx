@@ -1,4 +1,5 @@
 import Button from '@/components/Button';
+import LabeledTextInput from '@/components/LabeledTextInput';
 import { authAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -283,37 +284,29 @@ export default function RegisterScreen() {
               </View>
             )}
 
-            <View className='mb-5'>
-              <Text className='text-base font-semibold text-[#333] mb-2'>비밀번호</Text>
-              <TextInput
-                ref={passwordInputRef}
-                className='border border-[#ddd] rounded-xl px-4 py-3 text-base text-black bg-[#f9f9f9]'
-                placeholder="비밀번호를 입력해주세요."
-                placeholderTextColor="#999"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                returnKeyType="next"
-                onSubmitEditing={() => nameInputRef.current?.focus()}
-                blurOnSubmit={false}
-              />
-            </View>
+            <LabeledTextInput
+              ref={passwordInputRef}
+              label="비밀번호"
+              placeholder="비밀번호를 입력해주세요."
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              returnKeyType="next"
+              onSubmitEditing={() => nameInputRef.current?.focus()}
+              blurOnSubmit={false}
+            />
 
-            <View className='mb-5'>
-              <Text className='text-base font-semibold text-[#333] mb-2'>이름</Text>
-              <TextInput
-                ref={nameInputRef}
-                className='border border-[#ddd] rounded-xl px-4 py-3 text-base text-black bg-[#f9f9f9]'
-                placeholder="이름을 입력해주세요."
-                placeholderTextColor="#999"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="none"
-                returnKeyType="done"
-                onSubmitEditing={handleRegister}
-              />
-            </View>
+            <LabeledTextInput
+              ref={nameInputRef}
+              label="이름"
+              placeholder="이름을 입력해주세요."
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="none"
+              returnKeyType="done"
+              onSubmitEditing={handleRegister}
+            />
 
             <View className='mb-5'>
               <TouchableOpacity

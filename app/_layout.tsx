@@ -5,6 +5,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import '../global.css';
 
@@ -14,7 +15,10 @@ export default function RootLayout() {
     Pretendard: require('@/assets/fonts/PretendardVariable.ttf'),
   });
 
-  if (loaded) {
+  // 폰트 로드 후 기본 폰트 적용 (마운트 후 1회만 실행)
+  useEffect(() => {
+    if (!loaded) return;
+
     const T: any = Text as any;
     const TI: any = TextInput as any;
 
@@ -25,7 +29,7 @@ export default function RootLayout() {
     if (!TI.defaultProps) TI.defaultProps = {};
     if (!TI.defaultProps.style) TI.defaultProps.style = { fontFamily: 'Pretendard' };
     else TI.defaultProps.style = [TI.defaultProps.style, { fontFamily: 'Pretendard' }];
-  }
+  }, [loaded]);
 
   if (!loaded) {
     return (

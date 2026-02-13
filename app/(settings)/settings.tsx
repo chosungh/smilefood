@@ -77,7 +77,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-[#F2F4F6]">
       {/* Header */}
       <Header
         title="설정"

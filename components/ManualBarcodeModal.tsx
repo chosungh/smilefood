@@ -8,11 +8,11 @@ import {
     Modal,
     Platform,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
 import Button from './Button';
+import LabeledTextInput from './LabeledTextInput';
 
 interface ManualBarcodeModalProps {
     visible: boolean;
@@ -82,7 +82,7 @@ export const ManualBarcodeModal: React.FC<ManualBarcodeModalProps> = ({
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     className="w-full"
                 >
-                    <View className="w-full bg-white rounded-2xl p-5 shadow-lg shadow-black/20 max-h-[80%] items-stretch justify-start" style={{ elevation: 5 }}>
+                    <View className="w-full bg-white rounded-2xl p-5 shadow-lg shadow-black/20 max-h-[100%] items-stretch justify-start" style={{ elevation: 5 }}>
                         <View className="absolute top-0 left-0 w-full p-5 z-20 rounded-2xl">
                             <TouchableOpacity onPress={handleClose} accessibilityLabel="뒤로 가기">
                                 <Ionicons name='arrow-back' size={24} color="#000" />
@@ -93,10 +93,9 @@ export const ManualBarcodeModal: React.FC<ManualBarcodeModalProps> = ({
                             <Text className="text-2xl font-bold text-gray-800 text-center w-full">식품 수동 등록</Text>
                         </View>
 
-                        <TextInput
-                            className="border border-gray-200 rounded-xl px-4 py-3 text-lg bg-white mb-5 text-gray-800 min-h-[50]"
-                            placeholder="식품 바코드 번호"
-                            placeholderTextColor="#999"
+                        <LabeledTextInput
+                            label="식품 바코드 번호"
+                            placeholder="바코드 번호를 입력하세요"
                             value={manualBarcode}
                             onChangeText={setManualBarcode}
                             keyboardType="number-pad"

@@ -1,17 +1,12 @@
-import { authAPI } from '@/services/api';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Button from '@/components/Button';
+import Header from '@/components/Header';
+import LabeledTextInput from '@/components/LabeledTextInput';
 import { useAppContext } from '@/contexts/AppContext';
+import { authAPI } from '@/services/api';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Alert, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
@@ -52,13 +47,7 @@ export default function DeleteAccountScreen() {
                   {
                     text: '확인',
                     onPress: () => {
-                      // 네비게이션 스택을 완전히 정리하고 로그인 화면으로 이동
                       router.replace('/login');
-
-                      // 추가로 네비게이션 스택을 정리
-                      setTimeout(() => {
-                        router.replace('/login');
-                      }, 100);
                     },
                   },
                 ]
@@ -82,172 +71,55 @@ export default function DeleteAccountScreen() {
     );
   };
 
-  const handleCancel = () => {
-    router.back();
-  };
-
   return (
-    <SafeAreaView>
+    <SafeAreaView className='flex-1 bg-[#F2F4F6]'>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleCancel}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>회원탈퇴</Text>
-      </View>
+      <Header
+        title="회원탈퇴"
+        showBack={true}
+        showChat={false}
+        showSettings={false}
+      />
 
       {/* Content */}
-      <View style={styles.content}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>비밀번호 확인</Text>
-          <TextInput
-            style={styles.passwordInput}
+      <View className='flex-1 p-5'>
+        <View className='bg-white rounded-xl p-5'>
+          {/* 비밀번호 입력 */}
+          <LabeledTextInput
+            label="비밀번호 확인"
             placeholder="현재 비밀번호를 입력하세요"
-            placeholderTextColor="#999"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
             autoCapitalize="none"
             autoCorrect={false}
+            containerClassName="mb-7"
           />
-        </View>
 
-        <View style={styles.warningContainer}>
-          <Text style={styles.warningText}>
-            회원탈퇴를 진행하면 모든 데이터가 영구적으로 삭제되며, 복구할 수 없습니다.
-          </Text>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, styles.deleteButton]}
-            onPress={handleDeleteAccount}
-            disabled={isLoading}
-          >
-            <Text style={styles.deleteButtonText}>
-              {isLoading ? '처리중...' : '탈퇴하기'}
+          {/* 경고 메시지 */}
+          <View className='bg-[#fff3cd] border border-[#ffeaa7] rounded-xl p-5 mb-7'>
+            <Text className='text-sm text-[#856404] leading-5'>
+              회원탈퇴를 진행하면 모든 데이터가 영구적으로 삭제되며, 복구할 수 없습니다.
             </Text>
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={[styles.button, styles.cancelButton]}
-            onPress={handleCancel}
-            disabled={isLoading}
-          >
-            <Text style={styles.cancelButtonText}>취소</Text>
-          </TouchableOpacity>
+          {/* 버튼 영역 */}
+          <View className='flex-row gap-4'>
+            <Button
+              title="취소"
+              onPress={() => router.back()}
+              disabled={isLoading}
+              className='flex-1 bg-[#6c757d]'
+            />
+            <Button
+              title={isLoading ? '처리중...' : '탈퇴하기'}
+              onPress={handleDeleteAccount}
+              isLoading={isLoading}
+              className='flex-1 bg-[#dc3545]'
+            />
+          </View>
         </View>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-    zIndex: 10,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    zIndex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  warningContainer: {
-    backgroundColor: '#fff3cd',
-    borderWidth: 1,
-    borderColor: '#ffeaa7',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 30,
-  },
-  warningTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#856404',
-    marginBottom: 10,
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#856404',
-    lineHeight: 20,
-  },
-  inputContainer: {
-    marginBottom: 30,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 10,
-  },
-  passwordInput: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#333',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#6c757d',
-  },
-  deleteButton: {
-    backgroundColor: '#dc3545',
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

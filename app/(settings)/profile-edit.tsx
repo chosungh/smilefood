@@ -1,11 +1,11 @@
 import Header from '@/components/Header';
+import LabeledTextInput from '@/components/LabeledTextInput';
 import { useAppContext } from '@/contexts/AppContext';
 import { authAPI } from '@/services/api';
-import { ProfileEditStyles as styles } from '@/styles/GlobalStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -24,8 +24,7 @@ export default function ProfileEditScreen() {
 
   const handleConfirmImage = async () => {
     setImageModalVisible(false);
-
-    handleSaveProfile();
+    await handleSaveProfile();
   };
 
   const handleSaveProfile = async () => {
@@ -39,9 +38,9 @@ export default function ProfileEditScreen() {
       return;
     }
     try {
-      const params: any = {
+      const params = {
         name: trimmed,
-        profile_image_url: imageUrl
+        profile_image_url: imageUrl,
       };
 
       console.log('프로필 업데이트 요청:', { name: trimmed, profile_image_url: imageUrl });
@@ -63,7 +62,7 @@ export default function ProfileEditScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+    <SafeAreaView className="flex-1 bg-[#F2F4F6]">
       {/* Header */}
       <Header
         title="프로필 편집"
@@ -73,71 +72,69 @@ export default function ProfileEditScreen() {
       />
 
       {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Profile Image Section */}
-        <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
+        <View className="items-center py-[30px] mb-5">
+          <View className="relative mb-3">
             <TouchableOpacity onPress={openImageModal} activeOpacity={0.7}>
               {(imageUrl || userInfo?.profile_url) ? (
                 <Image
                   source={{ uri: (imageUrl || userInfo?.profile_url) as string }}
-                  style={styles.avatar}
+                  className="w-[100px] h-[100px] rounded-full"
                   contentFit="cover"
                   transition={200}
                   cachePolicy="memory-disk"
                 />
               ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarText}>
+                <View className="w-[100px] h-[100px] rounded-full bg-[#007AFF] justify-center items-center">
+                  <Text className="text-white text-4xl font-bold">
                     {userInfo?.name?.charAt(0)?.toUpperCase() || 'U'}
                   </Text>
                 </View>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.editImageButton} onPress={openImageModal}>
+            <TouchableOpacity
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white justify-center items-center border-2 border-[#007AFF]"
+              onPress={openImageModal}
+            >
               <Ionicons name="camera" size={16} color="#007AFF" />
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={openImageModal} activeOpacity={0.7}>
-            <Text style={styles.changePhotoText}>프로필 사진 변경</Text>
+            <Text className="text-[#007AFF] text-sm font-medium">프로필 사진 변경</Text>
           </TouchableOpacity>
         </View>
 
         {/* Form Section */}
-        <View style={styles.formSection}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>이름</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="이름을 입력하세요"
-              placeholderTextColor="#666"
-              autoCapitalize="words"
-              returnKeyType="done"
-              onSubmitEditing={async () => {
-                const trimmed = name.trim();
-                if (trimmed.length > 0) {
-                  await handleSaveProfile();
-                }
-              }}
-            />
-          </View>
+        <View className="bg-white mx-5 rounded-xl p-5">
+          <LabeledTextInput
+            label="이름"
+            value={name}
+            onChangeText={setName}
+            placeholder="이름을 입력하세요"
+            placeholderTextColor="#666"
+            autoCapitalize="words"
+            returnKeyType="done"
+            onSubmitEditing={async () => {
+              const trimmed = name.trim();
+              if (trimmed.length > 0) {
+                await handleSaveProfile();
+              }
+            }}
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>이메일</Text>
-            <Text style={styles.readOnlyText}>
+          <View className="mb-5">
+            <Text className="text-base font-semibold text-[#333] mb-2">이메일</Text>
+            <Text className="text-base text-[#666]">
               {userInfo?.email || '-'}
             </Text>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>가입일</Text>
-            <View>
-              <Text style={styles.readOnlyText}>
-                {userInfo?.created_at ? new Date(userInfo.created_at).toLocaleDateString('ko-KR') : '-'}
-              </Text>
-            </View>
+          <View className="mb-5">
+            <Text className="text-base font-semibold text-[#333] mb-2">가입일</Text>
+            <Text className="text-base text-[#666]">
+              {userInfo?.created_at ? new Date(userInfo.created_at).toLocaleDateString('ko-KR') : '-'}
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -149,24 +146,27 @@ export default function ProfileEditScreen() {
         animationType="fade"
         onRequestClose={() => setImageModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>프로필 이미지 URL</Text>
+        <View className="flex-1 items-center justify-center bg-black/20 px-5 py-10">
+          <View
+            className="w-full max-w-[480px] bg-white rounded-[14px] p-5"
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3.84, elevation: 5 }}
+          >
+            <Text className="text-lg font-bold text-[#333] mb-3 text-center">프로필 이미지 URL</Text>
 
             <TextInput
-              style={styles.modalInput}
+              className="border border-[#e0e0e0] rounded-lg px-3.5 py-2.5 text-base bg-white text-[#333] mb-4"
               placeholder="URL을 입력하세요. (비움: 기본이미지)"
               placeholderTextColor="#999"
               autoCapitalize="none"
               value={imageUrl}
               onChangeText={setImageUrl}
             />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalButton} onPress={() => setImageModalVisible(false)}>
-                <Text style={styles.modalButtonText}>취소</Text>
+            <View className="flex-row justify-end gap-3">
+              <TouchableOpacity className="px-4 py-2.5 rounded-lg bg-[#f0f0f0]" onPress={() => setImageModalVisible(false)}>
+                <Text className="text-sm text-[#333] font-semibold">취소</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.modalPrimary]} onPress={handleConfirmImage}>
-                <Text style={[styles.modalButtonText, styles.modalPrimaryText]}>저장</Text>
+              <TouchableOpacity className="px-4 py-2.5 rounded-lg bg-[#007AFF]" onPress={handleConfirmImage}>
+                <Text className="text-sm text-white font-semibold">저장</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -175,3 +175,4 @@ export default function ProfileEditScreen() {
     </SafeAreaView>
   );
 }
+

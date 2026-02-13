@@ -1,17 +1,22 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Button from '@/components/Button';
+import Header from '@/components/Header';
+import LabeledTextInput from '@/components/LabeledTextInput';
 import { useAppContext } from '@/contexts/AppContext';
 import { authAPI } from '@/services/api';
-import Header from '@/components/Header';
-import Button from '@/components/Button';
-import { ChangePasswordStyles as styles } from '@/styles/GlobalStyles';
+import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBar, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ChangePasswordScreen() {
   const router = useRouter();
   const { sessionId } = useAppContext();
+
+  // Refs
+  const newPasswordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+
+  // Form State
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -46,7 +51,7 @@ export default function ChangePasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+    <SafeAreaView className='flex-1 bg-[#F2F4F6]'>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <Header
         title="비밀번호 변경"
@@ -56,54 +61,51 @@ export default function ChangePasswordScreen() {
       />
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        className='flex-1'
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.card}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>현재 비밀번호</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="현재 비밀번호"
-                placeholderTextColor="#999"
-                secureTextEntry
-                autoCapitalize="none"
-                returnKeyType="next"
-              />
-            </View>
+        <ScrollView
+          contentContainerClassName='flex-grow p-5'
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className='bg-white rounded-xl p-5'>
+            <LabeledTextInput
+              label="현재 비밀번호"
+              placeholder="현재 비밀번호"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              returnKeyType="next"
+              onSubmitEditing={() => newPasswordRef.current?.focus()}
+              blurOnSubmit={false}
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>새 비밀번호</Text>
-              <TextInput
-                style={styles.input}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                placeholder="새 비밀번호"
-                placeholderTextColor="#999"
-                secureTextEntry
-                autoCapitalize="none"
-                returnKeyType="next"
-              />
-            </View>
+            <LabeledTextInput
+              ref={newPasswordRef}
+              label="새 비밀번호"
+              placeholder="새 비밀번호"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              returnKeyType="next"
+              onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+              blurOnSubmit={false}
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>새 비밀번호 확인</Text>
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="새 비밀번호 확인"
-                placeholderTextColor="#999"
-                secureTextEntry
-                autoCapitalize="none"
-                returnKeyType="done"
-                onSubmitEditing={handleSubmit}
-              />
-            </View>
+            <LabeledTextInput
+              ref={confirmPasswordRef}
+              label="새 비밀번호 확인"
+              placeholder="새 비밀번호 확인"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
+            />
 
             <Button
               title="변경하기"
@@ -116,6 +118,3 @@ export default function ChangePasswordScreen() {
     </SafeAreaView>
   );
 }
-
-
-

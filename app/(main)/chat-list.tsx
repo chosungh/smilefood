@@ -1,18 +1,39 @@
+/**
+ * REFACTORING NOTE:
+ * 이 파일은 기존 코드를 Tailwind CSS(NativeWind)로 변환하고 로직을 최적화한 버전입니다.
+ *
+ * 주요 변경 사항:
+ * 1. Styling: StyleSheet를 모두 제거하고 NativeWind className으로 교체했습니다.
+ *    - 이유: 코드 양을 줄이고, 전역적인 디자인 일관성을 유지하기 위함입니다.
+ *
+ * 2. Component: renderChatCard를 ChatCard 컴포넌트로 분리했습니다.
+ *    - 이유: FlatList 렌더링 성능 향상(React.memo) 및 재사용성 확보를 위함입니다.
+ *
+ * 3. Data Fetching: useEffect와 useFocusEffect 중복 호출을 제거했습니다.
+ *    - 이유: 화면 진입 시 API가 두 번 호출되는 문제를 방지합니다.
+ *
+ * 4. Type Safety: catch(error: any)를 axios.isAxiosError로 개선했습니다.
+ *    - 이유: 타입 안전성을 높이고 에러 처리를 명확하게 합니다.
+ *
+ * 5. Utility: 날짜 포맷 로직을 utils/date.ts로 분리했습니다.
+ *    - 이유: 프로젝트 전반에서 일관된 날짜 포맷을 사용하기 위함입니다.
+ */
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import axios from 'axios';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  Text,
+  View,
 } from 'react-native';
-import Header from '@/components/Header';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import Button from '@/components/Button';
+import ChatCard from '@/components/ChatCard';
+import Header from '@/components/Header';
 import { useAppContext } from '@/contexts/AppContext';
 import { ChatInfo, foodAPI, FoodItem } from '@/services/api';
 
@@ -24,244 +45,138 @@ type ChatListItem = {
 export default function ChatListScreen() {
   const router = useRouter();
   const { sessionId } = useAppContext();
-  
+
   const [chatList, setChatList] = useState<ChatListItem[]>([]);
-  const [foodItems, setFoodItems] = useState<{ [key: string]: FoodItem[] }>({});
+  const [foodItems, setFoodItems] = useState<Record<string, FoodItem[]>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadChatList = async () => {
+  const loadChatList = useCallback(async () => {
     if (!sessionId) return;
 
     try {
       setError(null);
       const response = await foodAPI.getChatList(sessionId);
-      
+
       if (response.code === 200) {
-        setChatList(response.data.chat_list.reverse());
-        
-        // 각 채팅의 음식 정보 가져오기 (404 에러 처리 포함)
-        try {
-          const foodListResponse = await foodAPI.getFoodList(sessionId);
-          if (foodListResponse.code === 200) {
-            const foodMap: { [key: string]: FoodItem[] } = {};
-            
-            response.data.chat_list.forEach(chat => {
-              // 존재하는 음식만 필터링
-              const selectedFoods = foodListResponse.data.food_list.filter(
-                food => chat.food_ids.includes(food.fid) && food.is_active === 1
-              );
-              foodMap[chat.chat_info.fcid] = selectedFoods;
-            });
-            
-            setFoodItems(foodMap);
-          }
-        } catch (foodError: any) {
-          // 음식 정보 가져오기 실패 시에도 채팅 리스트는 표시
-          console.warn('Failed to get food info:', foodError);
-          
-          // 빈 음식 맵으로 설정하여 채팅 리스트는 정상 표시
-          const emptyFoodMap: { [key: string]: FoodItem[] } = {};
-          response.data.chat_list.forEach(chat => {
-            emptyFoodMap[chat.chat_info.fcid] = [];
-          });
-          setFoodItems(emptyFoodMap);
-        }
+        const reversedList = response.data.chat_list.reverse();
+        setChatList(reversedList);
+
+        // 각 채팅의 음식 정보 가져오기 (실패해도 채팅 리스트는 표시)
+        const foodMap = await buildFoodMap(sessionId, reversedList);
+        setFoodItems(foodMap);
       } else {
         setError(response.message);
       }
-    } catch (error: any) {
-      // console.error('Error loading chat list:', error);
-      
-      // 404 에러인 경우 채팅 내역 없음 처리(리스트 정상 표시)
-      if (error.response?.status === 404) {
-        return
+    } catch (err: unknown) {
+      // 404 에러인 경우 채팅 내역 없음 처리 (리스트 정상 표시)
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        return;
       }
 
-      setError(error.response?.data?.message || '채팅 내역을 불러오는 중 오류가 발생했습니다.');
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message
+        : undefined;
+      setError(message || '채팅 내역을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    loadChatList();
   }, [sessionId]);
 
   // 화면이 포커스될 때마다 채팅 리스트 새로고침
+  // (useFocusEffect는 마운트 시에도 실행되므로 별도 useEffect 불필요)
   useFocusEffect(
     useCallback(() => {
       if (sessionId) {
         loadChatList();
       }
-    }, [sessionId])
+    }, [sessionId, loadChatList])
   );
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadChatList();
-  };
+  }, [loadChatList]);
 
-  const handleChatPress = (fcid: string) => {
-    router.push(`/chat-detail?fcid=${fcid}`);
-  };
+  const handleChatPress = useCallback(
+    (fcid: string) => {
+      router.push(`/chat-detail?fcid=${fcid}`);
+    },
+    [router]
+  );
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'created':
-        return '생성됨';
-      case 'queued':
-        return '대기중';
-      case 'creating':
-        return '생성중';
-      case 'completed':
-        return '완료';
-      case 'failed':
-        return '실패';
-      default:
-        return status;
-    }
-  };
+  const renderItem = useCallback(
+    ({ item }: { item: ChatListItem }) => (
+      <ChatCard
+        item={item}
+        foods={foodItems[item.chat_info.fcid] || []}
+        onPress={handleChatPress}
+      />
+    ),
+    [foodItems, handleChatPress]
+  );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return '#4CAF50';
-      case 'failed':
-        return '#F44336';
-      case 'creating':
-        return '#FF9800';
-      case 'queued':
-        return '#2196F3';
-      default:
-        return '#9E9E9E';
-    }
-  };
+  const keyExtractor = useCallback(
+    (item: ChatListItem) => item.chat_info.fcid,
+    []
+  );
 
-  const renderChatCard = ({ item }: { item: ChatListItem }) => {
-    const foods = foodItems[item.chat_info.fcid] || [];
-    const hasResponse = item.chat_info.response && item.chat_info.response.length > 0;
-    
-    return (
-      <TouchableOpacity
-        style={styles.chatCard}
-        onPress={() => handleChatPress(item.chat_info.fcid)}
-        activeOpacity={0.7}
-      >
-        {/* 상태 및 날짜 헤더 */}
-        <View style={styles.cardHeader}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.chat_info.status) }]}>
-            <Text style={styles.statusText}>{getStatusText(item.chat_info.status)}</Text>
-          </View>
-          <Text style={styles.dateText}>{new Date(item.chat_info.created_at).toLocaleString('ko-KR')}</Text>
-        </View>
-
-        {/* 음식 정보 */}
-        {foods.length > 0 ? (
-          <View style={styles.foodSection}>
-            <Text style={styles.foodSectionTitle}>사용된 식품</Text>
-            <View style={styles.foodList}>
-              {foods.slice(0, 3).map((food, index) => (
-                <View key={food.fid} style={styles.foodItem}>
-                  {food.image_url ? (
-                    <Image
-                      source={{ uri: food.image_url }}
-                      style={styles.foodImage}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View style={styles.foodPlaceholder}>
-                      <Text style={styles.foodPlaceholderText}>📦</Text>
-                    </View>
-                  )}
-                  <Text style={styles.foodName} numberOfLines={1}>
-                    {food.name}
-                  </Text>
-                </View>
-              ))}
-              {foods.length > 3 && (
-                <View style={styles.moreFoods}>
-                  <Text style={styles.moreFoodsText}>+{foods.length - 3}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        ) : (
-          <View style={styles.foodSection}>
-            <Text style={styles.foodSectionTitle}>사용된 식품</Text>
-            <View style={styles.noFoodContainer}>
-              <Ionicons name="information-circle-outline" size={20} color="#999" />
-              <Text style={styles.noFoodText}>음식 정보를 불러올 수 없습니다</Text>
-            </View>
-          </View>
-        )}
-
-        {/* 레시피 미리보기 */}
-        {hasResponse && (
-          <View style={styles.recipePreview}>
-            <Text style={styles.recipePreviewText} numberOfLines={3}>
-              {item.chat_info.response}
-            </Text>
-          </View>
-        )}
-
-        {/* 화살표 아이콘 */}
-        <View style={styles.arrowContainer}>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
+  // --- 로딩 상태 ---
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-        <View style={styles.loadingContainer}>
+      <SafeAreaView className="flex-1 bg-[#f5f5f5]">
+        <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>채팅 내역을 불러오는 중...</Text>
+          <Text className="mt-4 text-base text-gray-500">
+            채팅 내역을 불러오는 중...
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // --- 에러 상태 ---
   if (error) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadChatList}>
-            <Text style={styles.retryButtonText}>다시 시도</Text>
-          </TouchableOpacity>
+      <SafeAreaView className="flex-1 bg-[#f5f5f5]">
+        <View className="flex-1 justify-center items-center p-5">
+          <Text className="text-base text-red-500 text-center mb-5">
+            {error}
+          </Text>
+          <Button title="다시 시도" onPress={loadChatList} />
         </View>
       </SafeAreaView>
     );
   }
 
+  // --- 정상 렌더링 ---
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <SafeAreaView className="flex-1 bg-[#f5f5f5]">
       <Header
         title="레시피 추천 내역"
         showBack={true}
         showChat={false}
         showSettings={false}
       />
-      
+
       <FlatList
         data={chatList}
-        renderItem={renderChatCard}
-        keyExtractor={(item) => item.chat_info.fcid}
-        contentContainerStyle={styles.listContainer}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        contentContainerStyle={{ padding: 16 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
+          <View className="items-center py-16">
             <Ionicons name="chatbubble-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyText}>아직 레시피 추천 내역이 없습니다</Text>
-            <Text style={styles.emptySubText}>
+            <Text className="text-lg text-gray-500 mt-4 mb-2">
+              아직 레시피 추천 내역이 없습니다
+            </Text>
+            <Text className="text-sm text-gray-400 text-center">
               음식을 선택하고 AI 추천을 받아보세요.
             </Text>
           </View>
@@ -271,210 +186,42 @@ export default function ChatListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-    zIndex: 10,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    zIndex: 1,
-  },
-  listContainer: {
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#F44336',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  chatCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  statusText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  dateText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  foodSection: {
-    marginBottom: 16,
-  },
-  foodSectionTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 8,
-  },
-  foodList: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  foodItem: {
-    alignItems: 'center',
-    marginRight: 12,
-    width: 60,
-  },
-  foodImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    marginBottom: 4,
-  },
-  foodPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  foodPlaceholderText: {
-    fontSize: 20,
-  },
-  foodName: {
-    fontSize: 10,
-    color: '#666',
-    textAlign: 'center',
-  },
-  moreFoods: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  moreFoodsText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-  },
-  recipePreview: {
-    marginBottom: 16,
-  },
-  recipePreviewText: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-  },
-  usageInfo: {
-    marginBottom: 8,
-  },
-  usageText: {
-    fontSize: 12,
-    color: '#999',
-  },
-  arrowContainer: {
-    position: 'absolute',
-    right: 16,
-    top: '50%',
-    marginTop: -10,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: '#666',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubText: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-  },
-  noFoodContainer: {
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  noFoodText: {
-    fontSize: 14,
-    color: '#999',
-    fontStyle: 'italic',
-  },
-});
+// --- Helper Functions ---
+
+/**
+ * 채팅 리스트의 음식 정보를 fcid 기준으로 매핑합니다.
+ * 음식 목록 조회에 실패하더라도 빈 맵을 반환하여 채팅 리스트 표시에 영향을 주지 않습니다.
+ */
+async function buildFoodMap(
+  sessionId: string,
+  chatList: ChatListItem[]
+): Promise<Record<string, FoodItem[]>> {
+  try {
+    const foodListResponse = await foodAPI.getFoodList(sessionId);
+    if (foodListResponse.code !== 200) {
+      return createEmptyFoodMap(chatList);
+    }
+
+    const foodMap: Record<string, FoodItem[]> = {};
+    chatList.forEach((chat) => {
+      foodMap[chat.chat_info.fcid] = foodListResponse.data.food_list.filter(
+        (food) => chat.food_ids.includes(food.fid)
+      );
+    });
+    return foodMap;
+  } catch (err: unknown) {
+    console.warn('Failed to get food info:', err);
+    return createEmptyFoodMap(chatList);
+  }
+}
+
+/** 모든 채팅에 대해 빈 음식 배열을 가진 맵을 생성합니다. */
+function createEmptyFoodMap(
+  chatList: ChatListItem[]
+): Record<string, FoodItem[]> {
+  const emptyMap: Record<string, FoodItem[]> = {};
+  chatList.forEach((chat) => {
+    emptyMap[chat.chat_info.fcid] = [];
+  });
+  return emptyMap;
+}

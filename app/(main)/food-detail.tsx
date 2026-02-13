@@ -162,7 +162,7 @@ export default function FoodDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8F9FA]">
+    <SafeAreaView className="flex-1 bg-[#F2F4F6]">
       <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
 
       {/* Header */}
