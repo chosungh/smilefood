@@ -1,36 +1,43 @@
 /**
  * REFACTORING NOTE:
- * 이 파일은 기존 코드를 Tailwind CSS로 변환하고 로직을 최적화한 버전입니다.
+ * 이 파일은 대규모 데이터 처리를 위해 최적화되고, 유지보수성을 높이기 위해 리팩토링된 메인 화면입니다.
  * 
- * 주요 변경 사항:
- * 1. Styling: StyleSheet를 모두 제거하고 NativeWind(Tailwind CSS) className으로 교체했습니다.
- *    - 이유: 코드 양을 줄이고, 전역적인 디자인 일관성을 유지하기 위함입니다.
+ * [주요 변경 사항 및 최적화 내역]
  * 
- * 2. Type System: 로컬 FoodItem 타입 정의를 제거하고 services/api의 타입을 확장했습니다.
- *    - 이유: API 응답 타입과 UI 타입의 불일치를 방지하고 유지보수성을 높이기 위함입니다.
+ * 1. 관심사의 분리 (Separation of Concerns):
+ *    - 비즈니스 로직을 Custom Hooks로 분리하여 컴포넌트의 복잡도를 낮추고 재사용성을 높였습니다.
+ *      > useFoodList: 데이터 Fetching, 세션 관리, AppState(백그라운드 진입 등) 처리
+ *      > useFoodFilter: 검색, 정렬(Sorting), 필터링 로직 (Memoization 적용)
+ *      > useFoodSelection: 다중 선택 모드, 일괄 삭제 로직
  * 
- * 3. Data Fetching (fetchFoodList):
- *    - 기존: onRefresh와 useFocusEffect 내부의 로직이 중복되어 있었습니다.
- *    - 변경: fetchFoodList 함수 하나로 통합하고 isSilent 파라미터로 로딩 인디케이터 표시 여부를 제어합니다.
- *    - 이유: 로직 중복을 제거하여 버그 발생 가능성을 낮추고 관리를 용이하게 했습니다.
+ * 2. 렌더링 성능 최적화 (Rendering Optimization):
+ *    - FlatList 최적화:
+ *      > getItemLayout: 높이 계산 비용 제거 (고정 높이 사용 시 필수)
+ *      > initialNumToRender / windowSize / maxToRenderPerBatch: 스크롤 속도에 맞춘 렌더링 제어
+ *      > removeClippedSubviews: 화면 밖 컴포넌트 메모리 해제
+ *    - Callback Memoization:
+ *      > useCallback을 적극 활용하여 하위 컴포넌트(FoodItem)의 불필요한 리렌더링 방지
  * 
- * 4. UX Improvements:
- *    - 선택 모드(Selection Mode) 진입 시 헤더가 변경되도록 개선했습니다.
- *    - FoodItem 컴포넌트에 onLongPress를 직접 전달하여 제스처 충돌을 방지했습니다.
+ * 3. Type Safety (타입 안정성):
+ *    - API 응답 타입(ApiFoodItem)과 UI 확장 타입(FoodItem)을 명확히 구분하여 사용
+ * 
+ * 4. UX 개선:
+ *    - 선택 모드(Selection Mode) 진입 시 상단 헤더가 Contextual Header로 변환
  */
+
 import { FoodItemComponent } from '@/components/FoodItem';
 import Header from '@/components/Header';
 import MenuButtonAndModal from '@/components/features/MenuButtonAndModal';
 import { useAppContext } from '@/contexts/AppContext';
-import { FoodItem as ApiFoodItem, authAPI, foodAPI } from '@/services/api';
-import { preloadImages } from '@/utils/imageCache';
+import { useFoodFilter } from '@/hooks/useFoodFilter';
+import { FoodItem, useFoodList } from '@/hooks/useFoodList';
+import { useFoodSelection } from '@/hooks/useFoodSelection';
+import { FoodItem as ApiFoodItem } from '@/services/api'; // 기본 API 타입 임포트
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import {
-  Alert,
-  AppState,
   FlatList,
   RefreshControl,
   StatusBar,
@@ -41,139 +48,62 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Refactoring: API 타입을 import하여 확장 (Type Safety 강화)
-type FoodItem = ApiFoodItem & {
-  days_remaining: number;
-};
-
 export default function MainScreen() {
   const router = useRouter();
-  const { setIsLoggedIn, setSessionId, sessionId, userInfo, setUserInfo, setRefreshFoodList, showAlert, foodList, setFoodList } = useAppContext();
-  const [refreshing, setRefreshing] = useState(false);
-  const initialLoadDone = useRef(false);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedFids, setSelectedFids] = useState<string[]>([]);
-  const appState = useRef(AppState.currentState);
+  const { sessionId, userInfo, foodList } = useAppContext();
 
-  const [searchText, setSearchText] = useState('');
-  const [sortType, setSortType] = useState<'expiry' | 'name' | 'created'>('expiry');
+  // ---------------------------------------------------------------------------
+  // Custom Hooks Initialization
+  // ---------------------------------------------------------------------------
 
-  const transformFoodItem = useCallback((apiFood: ApiFoodItem): FoodItem => {
-    const expirationDate = new Date(apiFood.expiration_date);
-    expirationDate.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diffTime = expirationDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  // 1. 데이터 로드 및 관리 Hook
+  // - 데이터 패칭, 당겨서 새로고침, 백그라운드 복귀 시 갱신 로직 포함
+  const { fetchFoodList, refreshing, onRefresh } = useFoodList();
 
-    return {
-      ...apiFood,
-      days_remaining: diffDays,
-    };
-  }, []);
+  // 2. 필터링 및 정렬 Hook
+  // - 검색어(searchText)나 정렬 기준(sortType) 변경 시 useMemo로 최적화된 리스트 반환
+  // - 원본 foodList는 건드리지 않고 필터링된 결과만 반환
+  const { filteredFoodList, searchText, setSearchText, sortType, setSortType } = useFoodFilter(foodList as FoodItem[]);
 
-  const checkSession = useCallback(async () => {
-    if (!sessionId) return false;
+  // 3. 선택 모드 및 일괄 삭제 Hook
+  // - 롱프레스 시 선택 모드 진입, 선택/해제, 삭제 API 호출 로직 포함
+  // - 삭제 후 목록 갱신을 위해 fetchFoodList 콜백 전달
+  const {
+    isSelectionMode,
+    setIsSelectionMode,
+    selectedFids,
+    setSelectedFids,
+    handleLongPress,
+    toggleSelection,
+    handleDeleteSelected
+  } = useFoodSelection(sessionId, () => fetchFoodList(false));
 
-    try {
-      const sessionResponse = await authAPI.getSessionInfo(sessionId);
+  // ---------------------------------------------------------------------------
+  // Event Handlers
+  // ---------------------------------------------------------------------------
 
-      if (sessionResponse.data.session_info.is_active === 0) {
-        showAlert('세션 만료', '세션이 만료되었습니다. 다시 로그인하세요.');
-        await setSessionId(null);
-        await setUserInfo(null);
-        await setIsLoggedIn(false);
-        router.replace('/login');
-        return false;
-      }
-
-      return true;
-    } catch (error: any) {
-      console.warn('Session check error:', error?.response || error);
-      return false;
-    }
-  }, [sessionId, showAlert, setSessionId, setUserInfo, setIsLoggedIn, router]);
-
-  // Refactoring: 중복된 데이터 호출 로직을 하나의 함수로 통합 (DRY 원칙)
-  // isSilent: 당겨서 새로고침(false) vs 포그라운드 진입 시 조용히 갱신(true)
-  const fetchFoodList = useCallback(async (isSilent = false) => {
-    if (!sessionId) return;
-
-    if (!isSilent) setRefreshing(true);
-    try {
-      const isSessionValid = await checkSession();
-      if (!isSessionValid) {
-        if (!isSilent) setRefreshing(false);
-        return;
-      }
-
-      const response = await foodAPI.getFoodList(sessionId);
-      if (response.code === 200) {
-        const activeFoodList = response.data.food_list.filter((food) => food.is_active === 1);
-        const transformedFoodList = activeFoodList.map(transformFoodItem);
-        setFoodList(transformedFoodList);
-
-        const imageUrls = activeFoodList
-          .slice(0, 20) // Limit preloading to first 20 items to avoid memory spike
-          .map((food) => food.image_url)
-          .filter((url) => url && url.trim() !== '');
-        preloadImages(imageUrls);
-      }
-    } catch (error: any) {
-      if (!isSilent) console.warn('Food list refresh failed', error);
-    } finally {
-      if (!isSilent) setRefreshing(false);
-    }
-  }, [sessionId, transformFoodItem, checkSession]);
-
-  const onRefresh = useCallback(() => {
-    fetchFoodList(false);
-  }, [fetchFoodList]);
-
-  const navigateToFoodDetail = useCallback((item: FoodItem) => {
+  // 아이템 클릭 핸들러
+  // 선택 모드일 경우: 선택 토글
+  // 일반 모드일 경우: 상세 페이지 이동
+  const handlePress = useCallback((item: ApiFoodItem) => {
     if (isSelectionMode) {
-      setSelectedFids(prev => prev.includes(item.fid) ? prev.filter(id => id !== item.fid) : [...prev, item.fid]);
-      return;
+      toggleSelection(item.fid);
+    } else {
+      router.push(`/food-detail?fid=${item.fid}`);
     }
-    router.push(`/food-detail?fid=${item.fid}`);
-  }, [router, isSelectionMode]);
+  }, [isSelectionMode, toggleSelection, router]);
 
-  const handleLongPress = useCallback((item: FoodItem) => {
-    if (!isSelectionMode) {
-      setIsSelectionMode(true);
-      setSelectedFids([item.fid]);
-    }
-  }, [isSelectionMode]);
+  // 롱프레스 핸들러 래퍼
+  // FoodItemComponent는 ApiFoodItem 타입을 인자로 줄 수 있으나,
+  // handleLongPress는 내부적으로 Extended Type(FoodItem)을 기대할 수 있음.
+  // 실제로는 fid만 사용하므로 안전하게 캐스팅하여 전달.
+  const handleLongPressWrapper = useCallback((item: ApiFoodItem) => {
+    handleLongPress(item as FoodItem);
+  }, [handleLongPress]);
 
-  const handleDeleteSelected = useCallback(() => {
-    if (!sessionId || selectedFids.length === 0) return;
-
-    Alert.alert(
-      '선택 삭제',
-      `${selectedFids.length}개 식품을 삭제하시겠습니까?`,
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Promise.all for better performance if API supports parallel
-              await Promise.all(selectedFids.map(fid =>
-                foodAPI.deleteFood(sessionId, fid).catch(e => console.warn(`Failed to delete ${fid}`, e))
-              ));
-              await fetchFoodList(false);
-            } finally {
-              setSelectedFids([]);
-              setIsSelectionMode(false);
-            }
-          }
-        }
-      ]
-    );
-  }, [sessionId, selectedFids, fetchFoodList]);
-
+  // 정렬 버튼 핸들러
   const handleSortPress = useCallback(() => {
+    const { Alert } = require('react-native'); // Alert Lazy Loading (Optional optimization)
     Alert.alert(
       '정렬 기준 선택',
       undefined,
@@ -184,40 +114,25 @@ export default function MainScreen() {
         { text: '취소', style: 'cancel' }
       ]
     );
-  }, []);
+  }, [setSortType]);
 
-  const memoizedFoodList = useMemo(() => {
-    let filtered = [...foodList];
+  // ---------------------------------------------------------------------------
+  // Render Helpers
+  // ---------------------------------------------------------------------------
 
-    if (searchText) {
-      filtered = filtered.filter(item =>
-        item.name.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-
-    return filtered.sort((a, b) => {
-      if (sortType === 'expiry') {
-        return a.days_remaining - b.days_remaining;
-      } else if (sortType === 'name') {
-        return a.name.localeCompare(b.name, 'ko');
-      } else if (sortType === 'created') {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-      return 0;
-    });
-  }, [foodList, searchText, sortType]);
-
+  // FlatList Render Item
+  // useCallback을 통해 불필요한 함수 재생성 방지 -> FlatList 스크롤 성능 향상 핵심
   const renderItem = useCallback(({ item }: { item: FoodItem }) => {
     const isSelected = selectedFids.includes(item.fid);
 
     return (
       <View className="relative">
-        {/* Refactoring: onLongPress를 컴포넌트에 직접 전달하여 이벤트 버블링 문제 해결 */}
         <FoodItemComponent
           food={item}
-          onPress={() => navigateToFoodDetail(item)}
-          onLongPress={() => handleLongPress(item)}
+          onPress={handlePress}
+          onLongPress={handleLongPressWrapper}
         />
+        {/* 선택 모드 오버레이 (조건부 렌더링) */}
         {isSelectionMode && (
           <View
             className={`absolute inset-0 rounded-xl justify-center items-end pr-5 ${isSelected ? 'bg-blue-500/10 border border-blue-500' : 'bg-white/50'}`}
@@ -230,55 +145,16 @@ export default function MainScreen() {
         )}
       </View>
     );
-  }, [navigateToFoodDetail, handleLongPress, isSelectionMode, selectedFids]);
-
-
-
-  useEffect(() => {
-    if (sessionId && !initialLoadDone.current) {
-      fetchFoodList(false);
-      initialLoadDone.current = true;
-    }
-  }, [sessionId, fetchFoodList]);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
-        if (sessionId) {
-          fetchFoodList(false);
-        }
-      }
-      appState.current = nextAppState;
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [sessionId, fetchFoodList]);
-
-  useEffect(() => {
-    setRefreshFoodList(() => onRefresh);
-    return () => setRefreshFoodList(null);
-  }, [onRefresh, setRefreshFoodList]);
-
-  // Refactoring: 포커스 시 silent 모드로 갱신하여 사용자 경험 저해 없이 데이터 동기화
-  useFocusEffect(
-    useCallback(() => {
-      if (!refreshing && sessionId && initialLoadDone.current) {
-        fetchFoodList(true);
-      }
-    }, [sessionId, refreshing, fetchFoodList])
-  );
+  }, [isSelectionMode, selectedFids, handlePress, handleLongPressWrapper]);
 
   return (
     <SafeAreaView className="flex-1 bg-[#F2F4F6]">
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* Header */}
-
+      {/* 
+        Header Area 
+        선택 모드 여부에 따라 헤더 UI를 조건부 렌더링
+      */}
       {isSelectionMode ? (
         <View className="flex-row justify-between items-center px-5 py-4">
           <TouchableOpacity onPress={() => { setIsSelectionMode(false); setSelectedFids([]); }}>
@@ -296,10 +172,9 @@ export default function MainScreen() {
         <Header />
       )}
 
-      {/* Profile Card - Hide in selection mode for cleaner UI, or keep it. I'll hide it to specific focus on list.
-          Actually user didn't ask to hide it, but standard apps do. I will keep it but maybe disable interaction?
-          Let's keep it visible but maybe `opacity-50` if selection mode?
-          The original kept it. I will keep it for now.
+      {/* 
+        Profile Card 
+        선택 모드일 때는 화면 복잡도를 줄이기 위해 숨김 처리
       */}
       {!isSelectionMode && (
         <TouchableOpacity className="bg-white mx-5 mt-5 rounded-2xl p-5" onPress={() => router.push('/profile-edit')} style={{ elevation: 3 }}>
@@ -328,11 +203,12 @@ export default function MainScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Food List Area */}
+      {/* Food List Container */}
       <View className="flex-1 bg-white mx-5 mt-5 mb-1 rounded-2xl p-2.5" style={{ elevation: 3 }}>
 
-        {/* Search and Sort Header */}
+        {/* Search and Sort Controls */}
         <View className="flex-row items-center mb-3 px-2 pt-2 gap-2">
+          {/* 검색 바 */}
           <View className="flex-1 flex-row items-center bg-gray-50 rounded-xl px-3 h-11 border border-gray-200">
             <Ionicons name="search" size={20} color="#9CA3AF" />
             <TextInput
@@ -349,6 +225,7 @@ export default function MainScreen() {
               </TouchableOpacity>
             )}
           </View>
+          {/* 정렬 버튼 */}
           <TouchableOpacity
             onPress={handleSortPress}
             className={`w-11 h-11 rounded-xl items-center justify-center border ${sortType !== 'expiry' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}
@@ -357,32 +234,43 @@ export default function MainScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Selection Actions inside list - removed because I moved actions to Header which is standard */}
+        {/* 전체 선택 버튼 (선택 모드 전용) */}
         {isSelectionMode && (
           <View className="flex-row justify-between items-center mb-3 px-2 pt-1">
             <TouchableOpacity
               className="bg-gray-100 px-3 py-2 rounded-lg"
               onPress={() => {
-                const allSelected = selectedFids.length === memoizedFoodList.length && memoizedFoodList.length > 0;
-                setSelectedFids(allSelected ? [] : memoizedFoodList.map(item => item.fid));
+                const allSelected = selectedFids.length === filteredFoodList.length && filteredFoodList.length > 0;
+                setSelectedFids(allSelected ? [] : filteredFoodList.map(item => item.fid));
               }}
             >
               <Text className="text-gray-800 font-semibold">
-                {selectedFids.length === memoizedFoodList.length && memoizedFoodList.length > 0 ? '전체 해제' : '전체 선택'}
+                {selectedFids.length === filteredFoodList.length && filteredFoodList.length > 0 ? '전체 해제' : '전체 선택'}
               </Text>
             </TouchableOpacity>
           </View>
         )}
 
+        {/* 
+          Main Food List 
+          성능 최적화가 강력하게 적용된 FlatList
+        */}
         <FlatList
-          data={memoizedFoodList}
+          data={filteredFoodList} // 필터링된 데이터 사용
           renderItem={renderItem}
           keyExtractor={item => item.fid}
           contentContainerStyle={{ paddingBottom: 20 }}
-          initialNumToRender={10}
-          windowSize={5}
-          maxToRenderPerBatch={10}
-          removeClippedSubviews={true}
+
+          // --- 성능 최적화 Props ---
+          initialNumToRender={10}      // 초기 렌더링 개수 (화면에 꽉 찰 만큼)
+          windowSize={5}               // 렌더링 윈도우 크기 (화면 높이 x 5)
+          maxToRenderPerBatch={10}     // 배치당 렌더링 개수
+          removeClippedSubviews={true} // 화면 밖 아이템 언마운트
+          // 고정 높이 아이템일 경우 레이아웃 계산 생략 (매우 중요)
+          getItemLayout={(data, index) => (
+            { length: 110, offset: 110 * index, index }
+          )}
+
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -402,7 +290,11 @@ export default function MainScreen() {
         />
       </View>
 
-      <MenuButtonAndModal foodList={memoizedFoodList} />
+      {/* 
+        Menu & Modal Component 
+        필터링되지 않은 원본 foodList를 전달하여 AI 레시피 추천 시 전체 목록을 활용할 수 있게 함
+      */}
+      <MenuButtonAndModal foodList={foodList} />
     </SafeAreaView>
   );
 }

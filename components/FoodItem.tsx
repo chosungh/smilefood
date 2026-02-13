@@ -5,8 +5,8 @@ import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 
 interface FoodItemProps {
   food: FoodItem;
-  onPress?: () => void;
-  onLongPress?: () => void;
+  onPress?: (item: FoodItem) => void;
+  onLongPress?: (item: FoodItem) => void;
 }
 
 const formatDate = (dateString: string) => {
@@ -50,13 +50,16 @@ export const FoodItemComponent: React.FC<FoodItemProps> = memo(({ food, onPress,
     setError(true);
   };
 
+  const handlePress = () => onPress?.(food);
+  const handleLongPress = () => onLongPress?.(food);
+
   const expirationStatus = getExpirationStatus(food.expiration_date);
 
   return (
     <TouchableOpacity
       className="flex-row bg-white p-4 mb-3"
-      onPress={onPress}
-      onLongPress={onLongPress}
+      onPress={handlePress}
+      onLongPress={handleLongPress}
       activeOpacity={0.7}
     >
       <View className="relative mr-3">
