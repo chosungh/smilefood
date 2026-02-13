@@ -21,9 +21,6 @@ export default function Header({
     showSettings = true,
     showBack = false,
     onBackPress,
-    rightComponent,
-    leftComponent,
-    centerComponent,
     className,
 }: HeaderProps) {
     const router = useRouter();
@@ -39,21 +36,13 @@ export default function Header({
     return (
         <View className={`flex-row justify-between items-center px-5 py-4 bg-gray-50/0 ${className || ''}`}>
             <View className="flex-row items-center gap-2">
-                {leftComponent ? (
-                    leftComponent
-                ) : (
-                    <>
-                        {showBack && (
-                            <TouchableOpacity onPress={handleBack} className="mr-1 p-1">
-                                <Ionicons name="arrow-back" size={24} color="#1f2937" />
-                            </TouchableOpacity>
-                        )}
-                        <Text className="text-2xl font-bold text-gray-800">{title}</Text>
-                    </>
+                {showBack && (
+                    <TouchableOpacity onPress={handleBack} className="mr-1 p-1">
+                        <Ionicons name="arrow-back" size={24} color="#1f2937" />
+                    </TouchableOpacity>
                 )}
+                <Text className="text-2xl font-bold text-gray-800">{title}</Text>
             </View>
-
-            {centerComponent}
 
             <View className="flex-row items-center gap-3">
                 {showChat && (
@@ -72,7 +61,6 @@ export default function Header({
                         <Ionicons name="settings-outline" size={20} color="#007AFF" />
                     </TouchableOpacity>
                 )}
-                {rightComponent}
             </View>
         </View>
     );
