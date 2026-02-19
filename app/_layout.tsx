@@ -1,13 +1,27 @@
-import { AppProvider } from '@/contexts/AppContext';
+import { AppProvider, useAppContext } from '@/contexts/AppContext';
+import { setOnSessionInvalid } from '@/services/api';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import '@/utils/globalErrorHandler';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import '../global.css';
+
+/** 4xx 세션 에러 시 세션 초기화 후 로그인 화면으로 강제 이동 */
+function SessionInvalidHandler() {
+  const router = useRouter();
+  const { clearNavigationStack } = useAppContext();
+  useEffect(() => {
+    setOnSessionInvalid(() => {
+      clearNavigationStack().then(() => router.replace('/login'));
+    });
+    return () => setOnSessionInvalid(undefined);
+  }, [clearNavigationStack, router]);
+  return null;
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -41,6 +55,7 @@ export default function RootLayout() {
 
   return (
     <AppProvider>
+      <SessionInvalidHandler />
       <ThemeProvider value={colorScheme === 'light' ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
