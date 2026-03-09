@@ -69,6 +69,7 @@ $ npm run ios
 |-----------------|-----------------|
 | React Native    | <img src="https://github.com/user-attachments/assets/bfb7db30-3bfd-42d1-83fc-52ebbd246c38" alt="Typescript" width="100"> |
 | Expo    | <img src="https://github.com/user-attachments/assets/57a319f9-8997-4673-b894-a9567ee54718" alt="Expo" width="100"> |
+| TailwindCSS    | <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Tailwind_CSS_Logo.svg/1280px-Tailwind_CSS_Logo.svg.png" alt="TailwindCSS" width="100"> |
 | Typescript    | <img src="https://github.com/user-attachments/assets/2c19a96d-8775-484b-a7e7-e984f3a65676" alt="Typescript" width="100"> |
 
 <br/>
