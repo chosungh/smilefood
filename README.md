@@ -55,7 +55,7 @@ $ npm run ios
 | 이름 | 포지션 | 주요 담당 업무 |
 |-----------------|-----------------|-----------------|
 | 이건희    |  <img src="https://github.com/user-attachments/assets/c1c2b1e3-656d-4712-98ab-a15e91efa2da" alt="이동규" width="100"> | <ul><li>프로젝트 계획 및 관리</li></ul>     |
-| 조성현   |  <img src="https://github.com/user-attachments/assets/78ec4937-81bb-4637-975d-631eb3c4601e" alt="신유승" width="100">| <ul><li>메인 페이지(식재료 리스트, 정렬 및 필터링) 시스템 개발</li><li>바코드 스캔 구현 (Expo Camera 활용)</li><li>컴포넌트 개발</li><li>UI/UX 수정</ul> |
+| 조성현   |  <img src="https://avatars.githubusercontent.com/u/133869563?v=4" alt="조성현" width="100">| <ul><li>메인 페이지(식재료 리스트, 정렬 및 필터링) 시스템 개발</li><li>바코드 스캔 구현 (Expo Camera 활용)</li><li>컴포넌트 개발</li><li>UI/UX 수정</ul> |
 | 옥지윤   |  <img src="https://avatars.githubusercontent.com/u/106373575?v=4" alt="옥지윤" width="100">    |<ul><li>문서</ul>  |
 | 박현성    |  <img src="https://avatars.githubusercontent.com/u/106373575?v=4" alt="박현성" width="100">    | <ul><li>문서</ul>    |
 
