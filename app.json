@@ -3,10 +3,13 @@
     "name": "SmileFood",
     "slug": "smilefood",
     "version": "1.5.1",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "kr.szk.smilefood",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "바코드를 촬영하기 위해 카메라 접근 권한이 필요합니다."
       }
     },
     "android": {
@@ -29,7 +32,8 @@
     },
     "owner": "leegeonhee",
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-router"
     ]
   }
 }

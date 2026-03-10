@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { useAppContext } from '../contexts/AppContext';
+import { useAppContext } from '@/contexts/AppContext';
 
 export default function Index() {
   const router = useRouter();

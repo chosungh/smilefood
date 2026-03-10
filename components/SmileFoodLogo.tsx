@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, FontSizes, BorderRadius } from '../styles/GlobalStyles';
+import { Colors, FontSizes, BorderRadius } from '@/styles/GlobalStyles';
 
 interface SmileFoodLogoProps {
   size?: number;

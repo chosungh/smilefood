@@ -1,8 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { clearAuthData } from '../utils/storage';
 import { getUserAgent } from '../utils/userAgent';
 
 const API_BASE_URL = 'https://ggcg.szk.kr';
+
+/** 세션 무효(4xx 등) 시 호출할 콜백. AppProvider에서 등록하여 세션 초기화 후 로그인 화면으로 이동 */
+let onSessionInvalid: (() => void) | undefined;
+export function setOnSessionInvalid(callback: (() => void) | undefined) {
+  onSessionInvalid = callback;
+}
 
 // Axios 인스턴스 생성
 const api = axios.create({
@@ -28,19 +35,40 @@ api.interceptors.request.use(
   }
 );
 
+// 4xx 중 세션/인증 오류로 간주할 상태 코드 (올바르지 않은 세션값)
+const SESSION_ERROR_STATUSES = [400, 401, 403];
+
+/** 로그인·세션 관련 API 경로인지 여부 (이 경로에서만 4xx 시 세션 초기화) */
+function isSessionRelatedRequest(config: { url?: string }): boolean {
+  const url = (config?.url ?? '').split('?')[0];
+  return url === '/session' || url === 'session' || url.startsWith('/session/') || url.startsWith('session/');
+}
+
 // 응답 인터셉터 - 에러 처리
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   async (error) => {
-    if (error.response?.status === 401) {
-      // 인증 실패 시 sessionId 삭제
-      await AsyncStorage.removeItem('sessionId');
-      // 로그인 화면으로 리다이렉트 로직 추가 필요
+    const status = error.response?.status;
+    const config = error.config;
+    const isSessionAPI = config && isSessionRelatedRequest(config);
+
+    if (
+      isSessionAPI &&
+      status !== undefined &&
+      SESSION_ERROR_STATUSES.includes(status)
+    ) {
+      // 로그인/세션 API에서만: 세션 무효 시 저장소 초기화 후 로그인 화면으로 이동
+      try {
+        await AsyncStorage.removeItem('sessionId');
+        await clearAuthData();
+        onSessionInvalid?.();
+      } catch (e) {
+        console.warn('세션 초기화 중 오류:', e);
+        onSessionInvalid?.();
+      }
     }
-    // 404 에러는 리소스가 존재하지 않는 것이므로 그대로 전달
-    // 다른 에러들도 그대로 전달하여 각 API 호출에서 적절히 처리하도록 함
     return Promise.reject(error);
   }
 );

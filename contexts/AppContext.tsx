@@ -35,7 +35,7 @@ interface AppContextType {
   setRefreshFoodList: (callback: (() => void) | null) => void;
   clearNavigationStack: () => Promise<void>;
   setNavigationReset: (value: boolean) => void;
-  
+
   // Alert 관련 상태
   alertState: AlertState;
   showAlert: (title: string, message: string, buttons?: Array<{
@@ -44,6 +44,10 @@ interface AppContextType {
     style?: 'default' | 'cancel' | 'destructive';
   }>) => void;
   hideAlert: () => void;
+
+  // 전역 음식 리스트
+  foodList: any[];
+  setFoodList: (list: any[]) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -64,7 +68,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [refreshFoodList, setRefreshFoodList] = useState<(() => void) | null>(null);
   const [isNavigationReset, setNavigationReset] = useState(false);
-  
+
   // Alert 상태
   const [alertState, setAlertState] = useState<AlertState>({
     visible: false,
@@ -80,7 +84,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await setUserInfo(null);
     await setIsLoggedIn(false);
     setNavigationReset(true);
-    
+
     // 파일 시스템에서도 데이터 제거
     try {
       await clearAuthData();
@@ -96,7 +100,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const timer = setTimeout(() => {
         setNavigationReset(false);
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
   }, [isNavigationReset]);
@@ -106,12 +110,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         // AsyncStorage 데이터 확인 (디버깅용)
         await getAllAsyncStorageData();
-        
+
         // AsyncStorage에서 인증 데이터 로드
         const authData = await loadAuthData();
-        
+
         console.log('로드된 인증 데이터:', authData);
-        
+
         // 세션 ID와 로그인 상태 설정
         if (authData.sessionId && authData.isLoggedIn) {
           setSessionId(authData.sessionId);
@@ -149,9 +153,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleSetSessionId = useCallback(async (value: string | null) => {
     setSessionId(value);
-    await saveAuthData({ 
-      sessionId: value, 
-      isLoggedIn: !!value 
+    await saveAuthData({
+      sessionId: value,
+      isLoggedIn: !!value
     });
   }, []);
 
@@ -189,6 +193,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAlertState(prev => ({ ...prev, visible: false }));
   }, []);
 
+  // 전역 음식 리스트 상태 추가
+  const [foodList, setFoodListState] = useState<any[]>([]);
+
+  const setFoodList = useCallback((list: any[]) => {
+    setFoodListState(list);
+  }, []);
+
   const value = useMemo(() => ({
     isLoggedIn,
     sessionId,
@@ -196,6 +207,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isAppInitialized,
     userInfo,
     refreshFoodList,
+    foodList,
+    setFoodList,
     setIsLoggedIn: handleSetIsLoggedIn,
     setSessionId: handleSetSessionId,
     setIsFirstLaunch: handleSetIsFirstLaunch,
@@ -207,7 +220,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     alertState,
     showAlert,
     hideAlert
-  }), [isLoggedIn, sessionId, isFirstLaunch, isAppInitialized, userInfo, refreshFoodList, handleSetIsLoggedIn, handleSetSessionId, handleSetIsFirstLaunch, handleSetUserInfo, clearNavigationStack, isNavigationReset, setNavigationReset, alertState, showAlert, hideAlert]);
+  }), [isLoggedIn, sessionId, isFirstLaunch, isAppInitialized, userInfo, refreshFoodList, foodList, setFoodList, handleSetIsLoggedIn, handleSetSessionId, handleSetIsFirstLaunch, handleSetUserInfo, clearNavigationStack, isNavigationReset, setNavigationReset, alertState, showAlert, hideAlert]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

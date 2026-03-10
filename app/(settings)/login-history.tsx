@@ -1,10 +1,10 @@
+import Header from '@/components/Header';
+import { useAppContext } from '@/contexts/AppContext';
 import { authAPI } from '@/services/api';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppContext } from '../contexts/AppContext';
-import { LoginHistoryStyles as styles } from '../styles/GlobalStyles';
 
 interface SessionInfo {
   created_at: string;
@@ -39,14 +39,14 @@ export default function LoginHistoryScreen() {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!sessionId) {
         setError('세션 정보가 없습니다.');
         return;
       }
 
       const response: SessionListResponse = await authAPI.getSessionList(sessionId);
-      
+
       if (response.code === 200) {
         setSessions(response.data.sessions_info);
       } else {
@@ -75,7 +75,11 @@ export default function LoginHistoryScreen() {
   };
 
   const getStatusColor = (isActive: number) => {
-    return isActive === 1 ? '#28a745' : '#6c757d';
+    return isActive === 1 ? 'bg-green-500' : 'bg-gray-500';
+  };
+
+  const getStatusTextColor = (isActive: number) => {
+    return isActive === 1 ? 'text-green-500' : 'text-gray-500';
   };
 
   const maskIPAddress = (ip: string) => {
@@ -86,44 +90,44 @@ export default function LoginHistoryScreen() {
         return `${parts[0]}.${parts[1]}.xxx.xxx`;
       }
     }
-    
+
     // IPv6 주소 마스킹 (예: 2001:0db8:85a3:0000:0000:8a2e:0370:7334 -> 2001:0db8:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx)
     if (ip.includes(':')) {
       const parts = ip.split(':');
       if (parts.length >= 4) {
         // 앞의 2개 부분만 보여주고 나머지는 xxxx로 마스킹
-        const maskedParts = parts.map((part, index) => 
+        const maskedParts = parts.map((part, index) =>
           index < 4 ? part : 'xxxx'
         );
         return maskedParts.join(':');
       }
     }
-    
+
     // 기타 경우 원본 반환
     return ip;
   };
 
   const renderSessionCard = ({ item }: { item: SessionInfo }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.is_active) }]} />
-          <Text style={[styles.statusText, { color: getStatusColor(item.is_active) }]}>
+    <View className="bg-white rounded-xl mb-4 shadow-sm elevation-5 overflow-hidden">
+      <View className="flex-row justify-between items-center px-4 py-3 border-b border-gray-100">
+        <View className="flex-row items-center">
+          <View className={`w-2 h-2 rounded-full mr-1.5 ${getStatusColor(item.is_active)}`} />
+          <Text className={`text-sm font-semibold ${getStatusTextColor(item.is_active)}`}>
             {getStatusText(item.is_active)}
           </Text>
         </View>
-        <Text style={styles.deviceText}>{item.user_agent}</Text>
+        <Text className="text-xs text-gray-500 flex-1 text-right ml-2" numberOfLines={1} ellipsizeMode="tail">{item.user_agent}</Text>
       </View>
-      
-      <View style={styles.cardContent}>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>IP 주소:</Text>
-          <Text style={styles.value}>{maskIPAddress(item.ip_address)}</Text>
+
+      <View className="p-4">
+        <View className="flex-row justify-between items-center mb-2">
+          <Text className="text-sm text-gray-500 font-medium">IP 주소:</Text>
+          <Text className="text-sm text-gray-800 flex-1 text-right ml-2">{maskIPAddress(item.ip_address)}</Text>
         </View>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>로그인 시간:</Text>
-          <Text style={styles.value}>{formatDate(item.created_at)}</Text>
+
+        <View className="flex-row justify-between items-center">
+          <Text className="text-sm text-gray-500 font-medium">로그인 시간:</Text>
+          <Text className="text-sm text-gray-800">{formatDate(item.created_at)}</Text>
         </View>
       </View>
     </View>
@@ -131,53 +135,54 @@ export default function LoginHistoryScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.backButton}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>로그인 기록</Text>
-          <View style={styles.headerSpacer} />
-        </View>
-        
-        <View style={styles.loadingContainer}>
+      <SafeAreaView className="flex-1 bg-[#F2F4F6]">
+        <Header
+          title="로그인 기록"
+          showBack={true}
+          showChat={false}
+          showSettings={false}
+        />
+
+        <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>로그인 기록을 불러오는 중...</Text>
+          <Text className="mt-4 text-base text-gray-500">로그인 기록을 불러오는 중...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+    <SafeAreaView className="flex-1 bg-[#F2F4F6]">
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>로그인 기록</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <Header
+        title="로그인 기록"
+        showBack={true}
+        showChat={false}
+        showSettings={false}
+      />
 
       {/* Content */}
-      <View style={styles.content}>
+      <View className="flex-1 pt-5">
         {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={fetchSessionList}>
-              <Text style={styles.retryButtonText}>다시 시도</Text>
+          <View className="flex-1 justify-center items-center px-5">
+            <Text className="text-base text-red-500 text-center mb-5">{error}</Text>
+            <TouchableOpacity
+              className="bg-blue-500 px-5 py-3 rounded-lg"
+              onPress={fetchSessionList}
+            >
+              <Text className="text-white text-base font-semibold">다시 시도</Text>
             </TouchableOpacity>
           </View>
         ) : sessions.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>로그인 기록이 없습니다.</Text>
+          <View className="flex-1 justify-center items-center">
+            <Text className="text-base text-gray-500">로그인 기록이 없습니다.</Text>
           </View>
         ) : (
           <FlatList
             data={sessions}
             renderItem={renderSessionCard}
             keyExtractor={(item, index) => `${item.uid}-${index}`}
-            contentContainerStyle={styles.listContainer}
+            contentContainerClassName="px-5 pb-5"
             showsVerticalScrollIndicator={false}
           />
         )}
