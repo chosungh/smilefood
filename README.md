@@ -27,7 +27,7 @@ $ npm run ios
 | 이건희 | 조성현 | 옥지윤 | 박현성 |
 |:------:|:------:|:------:|:------:|
 | <img src="https://avatars.githubusercontent.com/u/79556905?v=4" alt="이건희" width="150"> | <img src="https://avatars.githubusercontent.com/u/133869563?v=4" alt="조성현" width="150"> | <img src="https://avatars.githubusercontent.com/u/106373575?v=4" alt="옥지윤" width="150"> | <img src="https://avatars.githubusercontent.com/u/106373575?v=4" alt="박현성" width="150"> |
-| PL, FE/BE | FE | 문서 | 문서 |
+| PL, BE | FE | 문서 | 문서 |
 | [GitHub](https://github.com/szkotgh) | [GitHub](https://github.com/chosungh) | [GitHub](https://github.com/) | [GitHub](https://github.com/) |
 
 <br/>
@@ -52,10 +52,10 @@ $ npm run ios
 <br/>
 
 # 4. 작업 및 역할 분담 (Tasks & Responsibilities)
-| 이름 | 포지션 | 주요 담당 업무 |
+| 이름 | 포지션 | 작업 내용 |
 |-----------------|-----------------|-----------------|
-| 이건희    |  <img src="https://github.com/user-attachments/assets/c1c2b1e3-656d-4712-98ab-a15e91efa2da" alt="이동규" width="100"> | <ul><li>프로젝트 계획 및 관리</li></ul>     |
-| 조성현   |  <img src="https://avatars.githubusercontent.com/u/133869563?v=4" alt="조성현" width="100">| <ul><li>메인 페이지(식재료 리스트, 정렬 및 필터링) 시스템 개발</li><li>바코드 스캔 구현 (Expo Camera 활용)</li><li>컴포넌트 개발</li><li>UI/UX 수정</ul> |
+| 이건희    |  <img src="https://github.com/user-attachments/assets/c1c2b1e3-656d-4712-98ab-a15e91efa2da" alt="이동규" width="100"> | <ul><li>프로젝트 총괄</li><li>CI/CD</li><li>Backend 운영</li><ul><li>사용자 처리, 세션관리</li><li>식품 정보 바코드 API 연동</li><li>OpenAI API 연동</li><li>이메일 발송</li><li>서버 운영 ([smilefood.szk.kr](https://smilefood.szk.kr))</li></ul><li>Frontend 배포</li><ul><li>API 연동</li><li>EAS를 활용한 Android, ios 앱 배포</li></ul></ul>     |
+| 조성현   |  <img src="https://imgssl.ezday.co.kr/cache/board/2008/09/03/51bcf8e6cc8fc649ab6dac1d38e6d853.jpg" alt="조성현" width="100" cover>| <ul><li>메인 페이지(식재료 리스트, 정렬 및 필터링) 시스템 개발</li><li>바코드 스캔 구현 (Expo Camera 활용)</li><li>컴포넌트 개발</li><li>UI/UX 수정</ul> |
 | 옥지윤   |  <img src="https://avatars.githubusercontent.com/u/106373575?v=4" alt="옥지윤" width="100">    |<ul><li>문서</ul>  |
 | 박현성    |  <img src="https://avatars.githubusercontent.com/u/106373575?v=4" alt="박현성" width="100">    | <ul><li>문서</ul>    |
 
